@@ -8,7 +8,6 @@ Last edited on Sat Feb  1 20:20:49 2020
 
 
 from readinputSPAST import READSPAST
-from hk import HopcroftKarp
 from copy import deepcopy
 
 
@@ -42,14 +41,13 @@ class SPASTSTRONG:
             self.unassigned_empty_list.append(student)
             self.G[student] = [set(), set(), set()] # [set of p_j's adjacent to s_i, bound p_j's, unbound p_j's]
         for project in r.plc:
-            self.G[project] = [set(), r.plc[project][1], False] # [students assigned to p_j, remnant of c_j --- I don't think I care about remnant of cj or dk]
+            self.G[project] = [set(), r.plc[project][1], False, 0] # [students assigned to p_j, remnant of c_j --- I don't think I care about remnant of cj or dk, replete, BE(pj)]
         for lecturer in r.lp_copy:
-            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False] # [students assigned to l_k, non-empty p_j's in G offered by l_k, remnant of d_k, replete]
+            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False, 0] # [students assigned to l_k, non-empty p_j's in G offered by l_k, remnant of d_k, replete, #BE(lk)]
         
         self.M = {}
         self.M_w_proj_lec = {}
         self.Zs = set()
-        self.Zp = set()
         # -------------------------------------------------------------------------------------------------------------------
         self.not_assigned = 0
         self.assigned = 0
@@ -148,17 +146,18 @@ class SPASTSTRONG:
         return: starting index of dominated students in Lkj as well as the students
         """
         lecturer = self.plc[project][0]
-        cj = self.plc[project][1]
+        #cj = self.plc[project][1]
+        qpj = self.pquota(project)
         Lkj_students = self.lp[lecturer][2][project]  # students who chose p_j according to Lk
-        Lkj_tail_index = self.plc[project][5] # self.plc[project][4] is length of list while self.plc[project][5] is initial tail index
-        Gpj = self.G[project][0]
+        Lkj_tail_index = self.plc[project][5] # self.plc[project][4] is length of list while self.plc[project][5] is tail index after deletions
+        Gpj = self.G[project][0] # students who are adjacent to pj in G
         dominated_index = None
         dominated_students = []
         count = 0 # this will increment the number of edges adjacent to students who are better than dominated students in Lkj
         for i in range(Lkj_tail_index+1):
             assigneees = Gpj.intersection(Lkj_students[i])
             count += len(assigneees)
-            if count >= cj:
+            if count >= qpj:
                 self.plc[project][5] = i # the updated tail of Lkj is now the tie in position i, again 0-based
                 dominated_index = i+1
                 dominated_students = self.lp[lecturer][2][project][dominated_index:]
@@ -176,9 +175,10 @@ class SPASTSTRONG:
         return: starting index of dominated students in Lk as well as those students
         """
         Lk_students = self.lp[lecturer][1]  # students in L_k  
-        dk = self.lp[lecturer][0]
+        #dk = self.lp[lecturer][0]
+        qlk = self.lquota(lecturer)
         #Glk = self.G[lecturer][0]
-        projects_inG = self.G[lecturer][1]
+        projects_inG = self.G[lecturer][1] # non-isolated projects in P_k \cap \mathcal{P}
         p_reduced_quotas = {p:self.pquota(p) for p in projects_inG}
 #        print(p_reduced_quotas)
         Lk_tail_index = self.lp[lecturer][5]
@@ -192,7 +192,7 @@ class SPASTSTRONG:
                         count += 1
                         p_reduced_quotas[p] -= 1
                     # print(lecturer, s, p, count, i)
-                    if count >= dk:
+                    if count >= qlk:
                         self.lp[lecturer][5] = i
                         dominated_index = i+1
                         dominated_students = Lk_students[dominated_index:]
@@ -229,50 +229,49 @@ class SPASTSTRONG:
             tie_at_head = self.next_tie_student_head(student)
             if tie_at_head is not None: # a None value here implies that the student has an empty preference list
                 for project in tie_at_head:
-                    if project == 'dp': continue
-                    else:                        
-                        lecturer = self.plc[project][0]
-                        # add the edge (student, project) to G 
-                        self.add_edge_to_G(student, project, lecturer)
-                        # ----------- if the quota of pj in G  is equal to cj ----------
-                        if self.pquota(project) == self.plc[project][1]:  
-                            self.G[project][2] = True   # set replete(p_j) to True
-                            dominated_index, dominated_students = self.p_dominated_students(project) # finds dominated students and the starting index on L_k^j
-                            # we delete dominated students from L_k^j by replacing L_k_j with non-dominated students
-                            if len(dominated_students) > 0:
-                                self.lp[lecturer][2][project] = self.lp[lecturer][2][project] [:dominated_index] 
-                                #print('remaining L_k^j: ', self.lp[lecturer][2][project])
-                            #print()
-                            # for each dominated student, delete (student, project)                          
-                            for tie in dominated_students:
-                                for st in tie:
-                                    self.delete(st, project, lecturer)
-                                    # print('line10 delete', st, project, lecturer)
+                    if project == 'dp': continue                      
+                    lecturer = self.plc[project][0]
+                    # add the edge (student, project) to G 
+                    self.add_edge_to_G(student, project, lecturer)
+                    # ----------- if the quota of pj in G  is equal to cj ----------
+                    if self.pquota(project) == self.plc[project][1]:  
+                        self.G[project][2] = True   # set replete(p_j) to True
+                        dominated_index, dominated_students = self.p_dominated_students(project) # finds dominated students and the starting index on L_k^j
+                        # we delete dominated students from L_k^j by replacing L_k_j with non-dominated students
+                        if len(dominated_students) > 0:
+                            self.lp[lecturer][2][project] = self.lp[lecturer][2][project] [:dominated_index] 
+                            #print('remaining L_k^j: ', self.lp[lecturer][2][project])
+                        #print()
+                        # for each dominated student, delete (student, project)                          
+                        for tie in dominated_students:
+                            for st in tie:
+                                self.delete(st, project, lecturer)
+                                # print('line10 delete', st, project, lecturer)
 
-                        # ----------- if the quota of lecturer is equal to dk -----------
-                        if self.lquota(lecturer) == self.lp[lecturer][0]:
-                            # print(lecturer, " replete")
-                            self.G[lecturer][3] = True # set replete(l_k) to True 
-                            dominated_index, dominated_students = self.l_dominated_students(lecturer) # finds dominated students and the starting index on l_k
-                            
-                            # print(lecturer, dominated_index, dominated_students, self.G[lecturer])
-                            # print(self.lp[lecturer])
-                            # print()
+                    # ----------- if the quota of lecturer is equal to dk -----------
+                    if self.lquota(lecturer) == self.lp[lecturer][0]:
+                        # print(lecturer, " replete")
+                        self.G[lecturer][3] = True # set replete(l_k) to True 
+                        dominated_index, dominated_students = self.l_dominated_students(lecturer) # finds dominated students and the starting index on l_k
+                        
+                        # print(lecturer, dominated_index, dominated_students, self.G[lecturer])
+                        # print(self.lp[lecturer])
+                        # print()
 #                                for k,v in self.G.items():
 #                                    print(k, '::>', v)
-                            
-                            # we delete dominated students from l_k by replacing l_k with non-dominated students
-                            self.lp[lecturer][1] = self.lp[lecturer][1][:dominated_index]
-                            p_k = set([i for i in self.lp[lecturer][2].keys()])  # all the projects that lecturer is offering
-                            for tie in dominated_students:
-                                for st in tie:
-                                    a_t = set(self.sp_no_tie_deletions[st])  # the student's altered preference list without ties..
-                                    common_projects = p_k.intersection(a_t)
-                                    for pu in common_projects:
-                                        self.delete(st, pu, lecturer)
+                        
+                        # we delete dominated students from l_k by replacing l_k with non-dominated students
+                        self.lp[lecturer][1] = self.lp[lecturer][1][:dominated_index]
+                        p_k = set([i for i in self.lp[lecturer][2].keys()])  # all the projects that lecturer is offering
+                        for tie in dominated_students:
+                            for st in tie:
+                                a_t = set(self.sp_no_tie_deletions[st])  # the student's altered preference list without ties..
+                                common_projects = p_k.intersection(a_t)
+                                for pu in common_projects:
+                                    self.delete(st, pu, lecturer)
                                         # print('lne 14 delete', st,pu,lecturer)
     #                        print('***********************************')
-                        # self.update_project_tail() # !important --- do not delete.
+                        # self.update_project_tail() # !important --- do not delete -- may not need afterall (verify!)
     #                        print('***********************************')
     #                        print(lecturer, self.lp[lecturer][1])
     #                        for k,v in s.G.items():
@@ -289,103 +288,31 @@ class SPASTSTRONG:
                 self.unassigned_empty_list.append(student)
             #########################################################################################################################################
     
-    
-    # =======================================================================
-    # update lecturer tail pointer 
-    # =======================================================================
-    def update_lecturer_tail(self):
-        for lecturer in self.lp:
-            alpha_k = sum([self.pquota(project) for project in self.G[lecturer][1] if len(self.G[project][0]) != 0]) # can the if statement here be removed if self.G[lecturer][1] is updated?
-            d_k = self.lp[lecturer][0]
-            # we only update the tail if alpha_k >= d_k is full or oversubscribed
-#            if self.G[lecturer][2] <= 0: # caught in an infinite loop with because tail could be not be updated and it forced the critical set to be non-empty
-            if alpha_k >= d_k:
-                # find the pointer of the worst assigned tie on L_k
-                Lk_students = self.lp[lecturer][1]  # students in L_k        
-                found = False
-                tail_index = self.lp[lecturer][4]
-#                print(lecturer, self.lp[lecturer])
-#                for k,v in self.G.items():
-#                    print('\t', k, '::>', v)
-#                print('***********************************')
-                while not found and tail_index >= 0:   # stop as soon as a worst tie containing a student assigned to l_k is found
-                    worst_student_tie = Lk_students[tail_index]  # tied students at the tail of L_k^j
-                    for find_worst_student in worst_student_tie:
-                        if find_worst_student in self.G[lecturer][0]:
-                            found = True                    
-                            break   # exit the for loop as soon as a worst student assigned to p_j is found
-                    # if no worst assigned student is found, we decrement the project worst counter and repeat the process again..
-                    if found is False:
-                        tail_index -= 1
-                        
-                if found:     
-                    self.lp[lecturer][4] = tail_index
-                    self.lp[lecturer][1] = self.lp[lecturer][1][:tail_index+1]
-                
-    # =======================================================================
-    # update project tail pointer - why do we still need this? find confidence
-    # =======================================================================
-    def update_project_tail(self):
-        for project in self.plc:
-            # tail update can only be done if project is full or oversubscribed
-            if self.G[project][1] <= 0:
-                lecturer = self.plc[project][0]
-                Lkj_students = self.lp[lecturer][2][project][:]  # students who chose p_j according to Lk -
-#                print(project, Lkj_students, self.plc[project])
-                found = False
-                tail_index = self.plc[project][4]
-                while not found and tail_index >= 0:   # exit the loop as soon as a worst student assigned to p_j is found
-                    worst_student_tie = Lkj_students[tail_index]  # tied students at the tail of L_k^j
-                    for find_worst_student in worst_student_tie:
-                        if find_worst_student in self.G[project][0]:
-                            found = True                    
-                            break   # exit the for loop as soon as a worst student assigned to p_j is found
-                    # if no worst assigned student is found, we decrement the project worst counter and repeat the process again..
-                    if not found:
-                        tail_index -= 1  
-                
-                if found:
-                    self.plc[project][4] = tail_index
-                    self.lp[lecturer][2][project] = self.lp[lecturer][2][project][:tail_index+1]
-                    
 
-    # =======================================================================
-    # is the edge a lower rank edge? returns boolean
-    # =======================================================================
-    def is_lower_rank_edge(self, student, project, lecturer):
-        
-        l_preflist = self.lp[lecturer][1][:]
-        alpha_k = sum([self.pquota(project) for project in self.G[lecturer][1] if len(self.G[project][0]) != 0]) # can the if statement here be removed if self.G[lecturer][1] is updated?
-        d_k = self.lp[lecturer][0]
-#        if project == 'p2' and student == 's6':
-#            print(l_preflist, alpha_k)
-        if student in l_preflist[-1] and  alpha_k > d_k:
-            return True
-        
-        return False
     
     
     # =======================================================================
-    # is the edge bound? returns boolean
+    # is the edge (si, pj) bound? returns True or False
     # =======================================================================
     def is_bound(self, student, project, lecturer):   
         p_preflist = self.lp[lecturer][2][project][:]
         l_preflist = self.lp[lecturer][1][:]     
-        # (number of edges adjacent to p_j in G is <= cj) or s_i is not in the tail of L_k_j (or both)
-        p_boolean = len(self.G[project][0]) <= self.plc[project][1] or student not in p_preflist[-1]
+        qpj = self.pquota(project)
+        qlk = self.lquota(lecturer)
+        # (number of edges adjacent to p_j in G = qpj) or s_i is not in the tail of L_k_j (or both)
+        p_boolean = (len(self.G[project][0]) == qpj) or (student not in p_preflist[-1])
 #        if project == 'p3' and student == 's1':
 #            print(project, p_preflist, p_boolean, self.G[project])
         # sum_{pj in Pk} (quota of pj) <= dk or (s_i is not in the tail of L_k) (or both)
-        l_boolean = sum([self.pquota(project) for project in self.G[lecturer][1]]) <= self.lp[lecturer][0] or student not in l_preflist[-1]
+        l_boolean = (sum([self.pquota(project) for project in self.G[lecturer][1]]) == qlk) or student not in l_preflist[-1]
         # if project == 'p2' and student == 's4':
         #     print(p_boolean, l_boolean, l_preflist[-1])
-#            print(self.is_lower_rank_edge(student, project, 'l2'))
         return p_boolean and l_boolean
             
     # =======================================================================
     # update bound and unbound projects (edges) for each assigned student in self.G
     # ======================================================================= 
-    def update_bound_unbound(self):
+    def update_bound_unbound(self):      
         for s in self.sp:
             Gs = self.G[s][0]
             bound_projects = set()
@@ -393,11 +320,32 @@ class SPASTSTRONG:
                 l = self.plc[p][0]
                 if self.is_bound(s, p, l):
                     bound_projects.add(p)
+                    self.G[p][3] +=1
+                    self.G[l][4] +=1
             unbound_projects = Gs.difference(bound_projects)
             self.G[s][1] = bound_projects
             self.G[s][2] = unbound_projects
                     
- 
+    # =======================================================================
+    # revised quota of project and lecturer in Gr
+    # ======================================================================= 
+    def revised_pquota(self, project):   
+        qpj = self.pquota(project) # quota of pj in G
+        # code below is dependent on self.update_bound_unbound() being called
+        pbound_edges = self.G[project][3] # number of bound edges adjacent to pj in G 
+        return qpj - pbound_edges
+     
+    def revised_lquota(self, lecturer):   
+        qlk = self.lquota(lecturer) # quota of lk in G
+        # code below is dependent on self.update_bound_unbound() being called
+        lbound_edges = self.G[lecturer][4] # number of bound edges adjacent to projects offered by lk in G 
+        return qlk - lbound_edges
+      
+    # =======================================================================
+    # form reduced assignment graph Gr
+    # ======================================================================= 
+    
+    
 filename = "caldam.txt"
 I = SPASTSTRONG(filename)
 I.while_loop()
@@ -406,10 +354,10 @@ for s in I.sp:
     print(f"{s} ;;;> {I.G[s]}")
 print()
 for p in I.plc:
-    print(f"{p} ;;;> {I.G[p]}")
+    print(f"{p} ;;;> {I.G[p]} --- {I.revised_pquota(p)}")
 print()
 for l in I.lp:
-    print(f"{l} ;;;> {I.G[l]}")
+    print(f"{l} ;;;> {I.G[l]} ---- {I.revised_lquota(l)}")
 
 """
     # =======================================================================

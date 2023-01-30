@@ -168,28 +168,38 @@ class READSPAST:
                         else:
                             d[project].append(student_tie)
                         rank += 1
-                    self.plc[project].append(len(d[project])-1)  # append len(L_k_j)
+                    self.plc[project].append(len(d[project]))  # append len(L_k_j)
                     self.plc[project].append(len(d[project])-1)  # worst_student_pointer
 
 
             length = len(lecturerpreferencelist)
             # lecturer = [lecturer_capacity, lecturerpreferencelist, d, full(lecturer) = False, len(lecturerpreferencelist), worst_student_pointer]
-            self.lp[lecturer] = [int(entry[1]), lecturerpreferencelist, d, False, length-1, length - 1]
+            self.lp[lecturer] = [int(entry[1]), lecturerpreferencelist, d, False, length, length - 1]
             self.lp_copy = deepcopy(self.lp)
 # -------------------------------------------------------------------------------------------------------------------------------
 # -------------------------------------------------------------------------------------------------------------------------------
-#s = READSPAST()
-##filename = sys.argv[1]
-#filename = "st3.txt"
-#s.read_file(filename)
-#print(s.sp)
-#print()
-##print(s.sp_no_tie_deletions)
-#print(s.plc)
-#print()
-#print(s.lp)
-#print()
-#print(s.lp_rank)
+# s = READSPAST()
+# #filename = sys.argv[1]
+# filename = "caldam.txt"
+# s.read_file(filename)
+
+# for i in s.sp:
+#     print(f"{i} :::> {s.sp[i]}")
+# print()
+# for p in s.plc:
+#     print(f"{p} :::> {s.plc[p]}")
+# print()   
+# for l in s.lp:
+#     print(f"{l} :::> {s.lp[l]}")
+
+# print(s.sp)
+# print()
+# #print(s.sp_no_tie_deletions)
+# print(s.plc)
+# print()
+# print(s.lp)
+# #print()
+# #print(s.lp_rank)
 #print()
 #print(s.proj_rank)
 

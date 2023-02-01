@@ -6,6 +6,7 @@ Created on Mon Jan 30 16:34:29 2023
 @author: sofiat
 """
 
+
 import networkx as nx
 
 G = nx.DiGraph()
@@ -19,7 +20,7 @@ G.add_edges_from( [
     ('s2', 'p1', {"capacity": 1}),
     ('s3', 'p1', {"capacity": 1}),
     
-    ('s4', 'p2', {"capacity": 2}),
+    ('s4', 'p2', {"capacity": 1}),
     
     ('p1', 'l1', {"capacity": 1}),
     ('p2', 'l1', {"capacity": 2}),
@@ -29,3 +30,7 @@ G.add_edges_from( [
     ])
 
 max_flow = nx.max_flow_min_cost(G, 's', 't')
+print(max_flow)
+# print(G.nodes)
+# print(G.edges)
+

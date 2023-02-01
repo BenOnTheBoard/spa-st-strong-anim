@@ -9,7 +9,7 @@ Last edited on Sat Feb  1 20:20:49 2020
 
 from readinputSPAST import READSPAST
 from copy import deepcopy
-
+import networkx as nx
 
 class SPASTSTRONG:
     def __init__(self, input):
@@ -41,9 +41,9 @@ class SPASTSTRONG:
             self.unassigned_empty_list.append(student)
             self.G[student] = [set(), set(), set()] # [set of p_j's adjacent to s_i, bound p_j's, unbound p_j's]
         for project in r.plc:
-            self.G[project] = [set(), r.plc[project][1], False, 0] # [students assigned to p_j, remnant of c_j --- I don't think I care about remnant of cj or dk, replete, BE(pj)]
+            self.G[project] = [set(), r.plc[project][1], False, 0, 0] # [students assigned to p_j, remnant of c_j --- I don't think I care about remnant of cj or dk, replete, #BE(pj), revised_quota]
         for lecturer in r.lp_copy:
-            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False, 0] # [students assigned to l_k, non-empty p_j's in G offered by l_k, remnant of d_k, replete, #BE(lk)]
+            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False, 0, 0] # [students assigned to l_k, non-empty p_j's in G offered by l_k, remnant of d_k, replete, #BE(lk), revised_quota]
         
         self.M = {}
         self.M_w_proj_lec = {}
@@ -78,17 +78,12 @@ class SPASTSTRONG:
     # add edge (s_i, p_j) to G
     # =======================================================================    
     def add_edge_to_G(self, student, project, lecturer):
+        # set filters duplicates, so if a student is added to G(lk) 
+        # multiple times, such student appears only once
         self.G[student][0].add(project) 
-        self.G[project][0].add(student)
-        #self.G[project][1] -= 1  # reduce c_j
-        # dk is reduced for each student even if the student is already assigned to a project offered by lk        
+        self.G[project][0].add(student)        
         self.G[lecturer][1].add(project)
         self.G[lecturer][0].add(student)
-        #self.G[lecturer][2] -= 1  # reduce d_k        
-        
-        # if student not in self.G[lecturer][0]:
-        #     self.G[lecturer][0].add(student)
-        #     self.G[lecturer][2] -= 1  # reduce d_k
 
 
     # =======================================================================
@@ -97,12 +92,12 @@ class SPASTSTRONG:
     def remove_edge_from_G(self, student, project, lecturer):
         if project in self.G[student][0]:
             self.G[student][0].remove(project) 
-            # discard is fine for bound and unbound edges
-            self.G[student][1].discard(project)
-            self.G[student][2].discard(project)            
+            # ---- bound and unbound edges are classified at each iteration
+            # so the next two lines may end up being redundant            
+            # self.G[student][1].discard(project) 
+            # self.G[student][2].discard(project)            
             
-            self.G[project][0].remove(student)
-            #self.G[project][1] += 1  # increment c_j             
+            self.G[project][0].remove(student)                       
             # if the project becomes an isolated vertex
             if len(self.G[project][0]) == 0:
                 self.G[lecturer][1].remove(project)
@@ -110,7 +105,7 @@ class SPASTSTRONG:
             # if in G, student no longer has any project in common w/ lecturer
             if len(self.G[student][0].intersection(self.G[lecturer][1])) == 0:
                 self.G[lecturer][0].remove(student)        
-                #self.G[lecturer][2] += 1  # increment d_k'
+
     
   
     # =======================================================================
@@ -145,8 +140,7 @@ class SPASTSTRONG:
         param: p_j
         return: starting index of dominated students in Lkj as well as the students
         """
-        lecturer = self.plc[project][0]
-        #cj = self.plc[project][1]
+        lecturer = self.plc[project][0]        
         qpj = self.pquota(project)
         Lkj_students = self.lp[lecturer][2][project]  # students who chose p_j according to Lk
         Lkj_tail_index = self.plc[project][5] # self.plc[project][4] is length of list while self.plc[project][5] is tail index after deletions
@@ -174,10 +168,8 @@ class SPASTSTRONG:
         param: l_k
         return: starting index of dominated students in Lk as well as those students
         """
-        Lk_students = self.lp[lecturer][1]  # students in L_k  
-        #dk = self.lp[lecturer][0]
+        Lk_students = self.lp[lecturer][1]  # students in L_k          
         qlk = self.lquota(lecturer)
-        #Glk = self.G[lecturer][0]
         projects_inG = self.G[lecturer][1] # non-isolated projects in P_k \cap \mathcal{P}
         p_reduced_quotas = {p:self.pquota(p) for p in projects_inG}
 #        print(p_reduced_quotas)
@@ -201,15 +193,11 @@ class SPASTSTRONG:
                         return dominated_index, dominated_students
    
                 
-        
-        
-    
     # =======================================================================
     # get the next set of projects tied together at the head of a student's preference list
     # ======================================================================= 
     def next_tie_student_head(self, student):
         s_preference = self.sp[student][1]  # the projected preference list for this student.. this changes during the allocation process.
-            
         # self.sp[student][3] points to the tie at the head of s_i's list 
         # if tie pointer is not up to length of pref list --- length is not 0-based!
         head_index = self.sp[student][3] # 0-based
@@ -340,24 +328,57 @@ class SPASTSTRONG:
         # code below is dependent on self.update_bound_unbound() being called
         lbound_edges = self.G[lecturer][4] # number of bound edges adjacent to projects offered by lk in G 
         return qlk - lbound_edges
+    
+    def update_revised_quota(self):
+        #self.update_bound_unbound()
+        for project in self.plc:
+            self.G[project][4] = self.revised_pquota(project)
+        for lecturer in self.lp:
+            self.G[lecturer][5] = self.revised_lquota(lecturer)
+            
       
     # =======================================================================
     # form reduced assignment graph Gr
     # ======================================================================= 
-    
+    def buildGr(self):
+        # the provisional assignment graph G passed into this function will have the
+        # updated bound and unbound edges adjacent to each student, project, and lecturer
+        Gr = nx.DiGraph()
+        for si in self.sp:
+            # if the student is not adjacent to any bound edge
+            if len(self.G[si][1]) == 0:        
+                Gr.add_edge('s', si, {"capacity": 1}) # source -> students
+                # for each project that si is adjacent to via an unbound edge
+                for pj in self.G[si][2]:
+                    Gr.add_edge(si, pj, {"capacity": 1}) # students -> projects
+        for lk in self.lp:
+            # if the lecturer has positive revised quota 
+            # then at least one of her projects will also have positive revised quota
+            if self.G[lk][5] > 0:
+                
+                for pj in self.G[lk][1]:
+                    if self.G[pj][4] > 0: # if the project has a positive revised quota
+                        Gr.add_edge(pj, lk, {"capacity": self.G[pj]}[4]) # lecturer (qlk*) -> sink
+                Gr.add_edge(lk, 't', {"capacity": self.G[lk]}[5]) # lecturer (qlk*) -> sink
+        #max_flow = nx.max_flow_min_cost(Gr, 's', 't')
+        return Gr
     
 filename = "caldam.txt"
 I = SPASTSTRONG(filename)
 I.while_loop()
 I.update_bound_unbound()
+I.update_revised_quota()
+Gr = I.buildGr()
 for s in I.sp:
     print(f"{s} ;;;> {I.G[s]}")
 print()
 for p in I.plc:
-    print(f"{p} ;;;> {I.G[p]} --- {I.revised_pquota(p)}")
+    print(f"{p} ;;;> {I.G[p]}")
 print()
 for l in I.lp:
-    print(f"{l} ;;;> {I.G[l]} ---- {I.revised_lquota(l)}")
+    print(f"{l} ;;;> {I.G[l]}")
+print()    
+print(Gr)
 
 """
     # =======================================================================

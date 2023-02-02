@@ -347,10 +347,10 @@ class SPASTSTRONG:
         for si in self.sp:
             # if the student is not adjacent to any bound edge
             if len(self.G[si][1]) == 0:        
-                Gr.add_edge('s', si, {"capacity": 1}) # source -> students
+                Gr.add_edge('s', si, capacity=1) # source -> students
                 # for each project that si is adjacent to via an unbound edge
                 for pj in self.G[si][2]:
-                    Gr.add_edge(si, pj, {"capacity": 1}) # students -> projects
+                    Gr.add_edge(si, pj, capacity=1) # students -> projects
         for lk in self.lp:
             # if the lecturer has positive revised quota 
             # then at least one of her projects will also have positive revised quota
@@ -358,17 +358,19 @@ class SPASTSTRONG:
                 
                 for pj in self.G[lk][1]:
                     if self.G[pj][4] > 0: # if the project has a positive revised quota
-                        Gr.add_edge(pj, lk, {"capacity": self.G[pj]}[4]) # lecturer (qlk*) -> sink
-                Gr.add_edge(lk, 't', {"capacity": self.G[lk]}[5]) # lecturer (qlk*) -> sink
-        #max_flow = nx.max_flow_min_cost(Gr, 's', 't')
-        return Gr
+                        Gr.add_edge(pj, lk, capacity=self.G[pj][4]) # lecturer (qlk*) -> sink
+                Gr.add_edge(lk, 't', capacity = self.G[lk][5]) # lecturer (qlk*) -> sink
+        max_flow = nx.max_flow_min_cost(Gr, 's', 't')
+        return Gr, max_flow
+    
+    
     
 filename = "caldam.txt"
 I = SPASTSTRONG(filename)
 I.while_loop()
 I.update_bound_unbound()
 I.update_revised_quota()
-Gr = I.buildGr()
+Gr, max_flow = I.buildGr()
 for s in I.sp:
     print(f"{s} ;;;> {I.G[s]}")
 print()
@@ -378,7 +380,7 @@ print()
 for l in I.lp:
     print(f"{l} ;;;> {I.G[l]}")
 print()    
-print(Gr)
+print(Gr, max_flow)
 
 """
     # =======================================================================

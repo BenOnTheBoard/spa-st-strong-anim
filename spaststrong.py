@@ -41,13 +41,14 @@ class SPASTSTRONG:
             self.unassigned_empty_list.append(student)
             self.G[student] = [set(), set(), set()] # [set of p_j's adjacent to s_i, bound p_j's, unbound p_j's]
         for project in r.plc:
-            self.G[project] = [set(), r.plc[project][1], False, 0, 0] # [students assigned to p_j, remnant of c_j --- I don't think I care about remnant of cj or dk, replete, #BE(pj), revised_quota]
+            self.G[project] = [set(), r.plc[project][1], False, 0, 0] # [students assigned to p_j, c_j, replete, #BE(pj), revised_quota]
         for lecturer in r.lp_copy:
-            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False, 0, 0] # [students assigned to l_k, non-empty p_j's in G offered by l_k, remnant of d_k, replete, #BE(lk), revised_quota]
+            self.G[lecturer] = [set(), set(), r.lp_copy[lecturer][0], False, 0, 0] # [students assigned to l_k, non-empty p_j's in G offered by l_k, d_k, replete, #BE(lk), revised_quota]
         
         self.M = {}
         self.M_w_proj_lec = {}
         self.Zs = set()
+        self.build_Gr = False
         # -------------------------------------------------------------------------------------------------------------------
         self.not_assigned = 0
         self.assigned = 0
@@ -226,6 +227,7 @@ class SPASTSTRONG:
                         self.G[project][2] = True   # set replete(p_j) to True
                         dominated_index, dominated_students = self.p_dominated_students(project) # finds dominated students and the starting index on L_k^j
                         # we delete dominated students from L_k^j by replacing L_k_j with non-dominated students
+                        #print(student, project, dominated_index, dominated_students)
                         if len(dominated_students) > 0:
                             self.lp[lecturer][2][project] = self.lp[lecturer][2][project] [:dominated_index] 
                             #print('remaining L_k^j: ', self.lp[lecturer][2][project])
@@ -234,7 +236,7 @@ class SPASTSTRONG:
                         for tie in dominated_students:
                             for st in tie:
                                 self.delete(st, project, lecturer)
-                                # print('line10 delete', st, project, lecturer)
+                                # print('line11 delete', st, project, lecturer)
 
                     # ----------- if the quota of lecturer is equal to dk -----------
                     if self.lquota(lecturer) == self.lp[lecturer][0]:
@@ -257,7 +259,7 @@ class SPASTSTRONG:
                                 common_projects = p_k.intersection(a_t)
                                 for pu in common_projects:
                                     self.delete(st, pu, lecturer)
-                                        # print('lne 14 delete', st,pu,lecturer)
+                                        # print('lne 16 delete', st,pu,lecturer)
     #                        print('***********************************')
                         # self.update_project_tail() # !important --- do not delete -- may not need afterall (verify!)
     #                        print('***********************************')
@@ -271,17 +273,16 @@ class SPASTSTRONG:
                 self.unassigned_empty_list.remove(student)
                 
             # !* if the current student is unassigned in the matching, with a non-empty preference list, we re-add the student to the unassigned list
-            if len(self.G[student][0]) == 0 and student not in self.unassigned_empty_list and len(self.sp_no_tie_deletions[student]) > 0:  #--- caught in an infinite while loop for tie-9 (check later!**)
-            #if self.M[student] == set() and self.sp[student][3] < self.sp[student][0]:
+            if len(self.G[student][0]) == 0 and student not in self.unassigned_empty_list and len(self.sp_no_tie_deletions[student]) > 0:  
                 self.unassigned_empty_list.append(student)
             #########################################################################################################################################
     
 
     
     
-    # =======================================================================
+    # =========================================================================
     # is the edge (si, pj) bound? returns True or False
-    # =======================================================================
+    # =========================================================================
     def is_bound(self, student, project, lecturer):   
         p_preflist = self.lp[lecturer][2][project][:]
         l_preflist = self.lp[lecturer][1][:]     
@@ -296,27 +297,41 @@ class SPASTSTRONG:
         # if project == 'p2' and student == 's4':
         #     print(p_boolean, l_boolean, l_preflist[-1])
         return p_boolean and l_boolean
-            
-    # =======================================================================
+    
+    # =========================================================================
+    # reset the number of bound edges adjacent to each pj and lk to 0
+    # as well as their revised quota in G from the previous iteration
+    # ========================================================================= 
+    def reset_bound(self):
+        for project in self.plc:
+            self.G[project][3], self.G[project][4] = 0, 0
+        for lecturer in self.lp:
+            self.G[lecturer][4], self.G[lecturer][5] = 0, 0
+    
+    # =========================================================================
     # update bound and unbound projects (edges) for each assigned student in self.G
-    # ======================================================================= 
-    def update_bound_unbound(self):      
+    # ========================================================================= 
+    def update_bound_unbound(self):
+        self.build_Gr = False
+        self.reset_bound()
         for s in self.sp:
             Gs = self.G[s][0]
             bound_projects = set()
             for p in Gs:
                 l = self.plc[p][0]
-                if self.is_bound(s, p, l):
+                if self.is_bound(s, p, l):                    
                     bound_projects.add(p)
                     self.G[p][3] +=1
                     self.G[l][4] +=1
             unbound_projects = Gs.difference(bound_projects)
             self.G[s][1] = bound_projects
             self.G[s][2] = unbound_projects
+            if len(bound_projects) == 0 and len(unbound_projects) > 0:
+                self.build_Gr = True
                     
-    # =======================================================================
+    # =========================================================================
     # revised quota of project and lecturer in Gr
-    # ======================================================================= 
+    # ========================================================================= 
     def revised_pquota(self, project):   
         qpj = self.pquota(project) # quota of pj in G
         # code below is dependent on self.update_bound_unbound() being called
@@ -337,16 +352,28 @@ class SPASTSTRONG:
             self.G[lecturer][5] = self.revised_lquota(lecturer)
             
       
-    # =======================================================================
+    # =========================================================================
     # form reduced assignment graph Gr
-    # ======================================================================= 
+    # ========================================================================= 
     def buildGr(self):
+        '''
+        This function forms the reduced assignment graph and uses networkx
+        to find a maximum flow matching Mr
+
+        Returns
+        -------
+        max_flow : dict of dict 
+            The reduced assignment graph with their capacity in Mr.
+
+        '''
         # the provisional assignment graph G passed into this function will have the
         # updated bound and unbound edges adjacent to each student, project, and lecturer
+        # it will also have the information of each project and lecturer
+        # whose revised quota is >= 1
         Gr = nx.DiGraph()
         for si in self.sp:
-            # if the student is not adjacent to any bound edge
-            if len(self.G[si][1]) == 0:        
+            # if the student is only adjacent to unbound edges
+            if len(self.G[si][1]) == 0 and len(self.G[si][2]) > 0:         
                 Gr.add_edge('s', si, capacity=1) # source -> students
                 # for each project that si is adjacent to via an unbound edge
                 for pj in self.G[si][2]:
@@ -361,210 +388,184 @@ class SPASTSTRONG:
                         Gr.add_edge(pj, lk, capacity=self.G[pj][4]) # lecturer (qlk*) -> sink
                 Gr.add_edge(lk, 't', capacity = self.G[lk][5]) # lecturer (qlk*) -> sink
         max_flow = nx.max_flow_min_cost(Gr, 's', 't')
-        return Gr, max_flow
+        print(max_flow)
+        # we can assert that the total lecturer revised quota is <= number of students
+        # this is just for debugging, so that when the assert fails, something is massively wrong!
+        return max_flow
     
     
+    # =========================================================================
+    # find unhappy students in Gr relative to the matching Mr found by flow alg
+    # ========================================================================= 
+    def unhappy_students(self, max_flow):
+        #max_flow = self.buildGr()
+        Gr_students = set(max_flow['s'].keys())
+        # typeI students are the unmatched students in Gr
+        typeI = set([student for student in Gr_students if max_flow['s'][student] == 0])
+        typeII = set([])
+        # look at the remaining students in Gr_student who are not typeI students
+        for student in Gr_students.difference(typeI):
+            print(student, end=" ")
+            # get the projects this student is adjacent to in Gr
+            adjacent_projects = set(max_flow[student].keys())
+            # out of these projects, which of them is the student assigned to
+            # by the flow algorithm
+            assigned_project = None
+            for project in adjacent_projects:
+                if max_flow[student][project] == 1:
+                    assigned_project = project
+                    break # stop the loop as soon as the assigned project is found
+            lecturer = self.plc[assigned_project][0] # lecturer who offers this project
+            print(lecturer, end=" ")
+            # all the projects that the lecturer is offering or just their non-empty projects in G
+            lecturer_projects = set(self.G[lecturer][1])
+            # if the intersection below results in a set with more than one project
+            # i.e., the assigned_project, then student is not matched to 
+            # the other projects by the flow algorithm. 
+            intersect = adjacent_projects.intersection(lecturer_projects)
+            # first we need to remove the project that student is assigned in the flow
+            intersect.remove(assigned_project)          
+            print(intersect)            
+            # check that the number of assignees of the project in max flow is
+            # smaller than the revised quota of the project in Gr
+            for project in intersect:
+                if max_flow[project][lecturer] < self.G[project][4]:
+                    typeII.add(student)
+                    break # si has one (undersub) project in common w/ lk is enough to break the for loop
+                
+        # sanity check for debugging as these two sets are disjoint
+        assert typeI.intersection(typeII) == set() 
+        
+        unhappy_students = typeI.union(typeII)
+        print(f"\nstudents in Gr {Gr_students}\n")
+        print(f"typeI students in Gr {typeI}\n")
+        print(f"typeII students in Gr {typeII}\n")
+        print(f"Unhappy students in Gr {unhappy_students}\n")
+        return max_flow, unhappy_students
+        
+        
+    # =========================================================================
+    # find critical set of students in Gr 
+    # relative to the matching Mr found by flow alg, and unhappy students
+    # ========================================================================= 
+    def criticalSet(self, max_flow, unhappy_students):
+        ''' Every student who is unhappy will initiate the critical set        
+        '''               
+        critical_set = set()
+        unexplored_students = set([s for s in unhappy_students])
+        explored_students, visited_projects = set(), set()
+        while unexplored_students:
+            student = unexplored_students.pop()
+            explored_students.add(student)
+            critical_set.add(student) # data structure is doing same thing as previous line
+            # follow all projects adjacent to student via an unmatched edge
+            unmatched_p_vertices = [p for p in max_flow[student] if max_flow[student][p] == 0]
+            for project in unmatched_p_vertices:
+                if project not in visited_projects:
+                    visited_projects.add(project)
+                    # follow all students adjacent to project via a matched edge
+                    # there could be more than one of them since revised quota >= 1
+                    all_matched_students = set()
+                    # check all students adjacent to pj in G, if the student is in max_flow
+                    # and max_flow[student][project] == 1, then student is matched to the project
+                    # first get all students adjacent to project in Gr
+                    Gr_students = self.G[project][0].intersection(set(max_flow.keys()))
+                    for sr in Gr_students:
+                        if max_flow[sr][project] == 1:
+                            all_matched_students.add(sr)
+                    for st in all_matched_students:
+                        if st not in explored_students:
+                            unexplored_students.add(st)
+                        
+        assert explored_students == critical_set # another sanity check
+        print(f"Critical set Zs {critical_set}\n")
+        return critical_set
     
-filename = "caldam.txt"
+    # =========================================================================
+    # inner repeat-until loop in line 3
+    # keeps running until self.Zs is empty
+    # ========================================================================= 
+    def inner_repeat(self):
+        self.Zs = set([None]) # storing None allows the while loop to begin
+        iteration = 0
+        while self.Zs:
+            iteration +=1
+            self.Zs = set()
+            print(f"Iteration {iteration} ...............................")
+            self.while_loop()
+            self.update_bound_unbound() # classify edges in G as bound or unbound
+            
+            
+            # we form the reduced assignment graph if some student is adjacent to only unbound edges
+            if self.build_Gr:                      
+                self.update_revised_quota() # update revised quota based on # of bound edges
+                max_flow = self.buildGr() # form reduced assigned graph and find Mr
+                max_flow, unhappy_students = self.unhappy_students(max_flow) # find the unhappy students in Gr
+                self.Zs = self.criticalSet(max_flow, unhappy_students) # find the critical set
+                print(self.Zs)
+                # find the projects adjacent in Gr to students in the critical set
+                N_Zs = set() 
+                for student in self.Zs:
+                    N_Zs.update(set(max_flow[student].keys()))
+                #self.Zs = set() # so that while loop can terminate            
+                print(f"Neighbourhood of critical set N(Zs) {N_Zs}\n")
+                
+                # lines 19 - 22
+                for project in N_Zs:
+                    lecturer = self.plc[project][0]                        
+                    Lkj_students = self.lp[lecturer][2][project]  # reduced students who chose p_j according to Lk
+                    Lkj_tail_index = self.plc[project][5] # self.plc[project][5] is tail index after deletions
+                    Lkj_tail = Lkj_students[Lkj_tail_index]                
+                    for st in Lkj_tail:
+                        self.delete(st, project, lecturer)
+                        # print('line22  delete', st, project, lecturer)
+                        # !* if the current student is unassigned in G, with a non-empty preference list, we re-add the student to the unassigned list
+                        if len(self.G[st][0]) == 0 and st not in self.unassigned_empty_list and len(self.sp_no_tie_deletions[st]) > 0:  
+                            self.unassigned_empty_list.append(st)
+                        
+                    # update the project tail as well as Lkj list
+                    self.plc[project][5] -= 1
+                    self.lp[lecturer][2][project] = self.lp[lecturer][2][project] [:Lkj_tail_index]
+                    # what if the tail we've just deleted is same as lecturer tail
+                    # can we delete this tail from lecturer list as well - NO!
+                    # since those students might have other projects in common with the lecturer
+                
+            # -----------------------------------------------
+            for s in self.sp:
+                print(f"{s} ;;;> {self.G[s]} ::: {self.sp[s][1]} ::: {self.sp_no_tie_deletions[s]}")
+            print()
+            for p in self.plc:
+                print(f"{p} ;;;> {self.G[p]}")
+            print()
+            for l in self.lp:
+                print(f"{l} ;;;> {self.G[l]}")
+            print()   
+            # -----------------------------------------------  
+    
+filename = "ex4.txt"
 I = SPASTSTRONG(filename)
-I.while_loop()
-I.update_bound_unbound()
-I.update_revised_quota()
-Gr, max_flow = I.buildGr()
-for s in I.sp:
-    print(f"{s} ;;;> {I.G[s]}")
-print()
-for p in I.plc:
-    print(f"{p} ;;;> {I.G[p]}")
-print()
-for l in I.lp:
-    print(f"{l} ;;;> {I.G[l]}")
-print()    
-print(Gr, max_flow)
+I.inner_repeat()
+# I.update_bound_unbound()
+# I.update_revised_quota()
+# max_flow = I.buildGr()
+# max_flow, US = I.unhappy_students(max_flow)
+# Zs = I.criticalSet(max_flow, US)
+# for s in I.sp:
+#     print(f"{s} ;;;> {I.G[s]} ::: {I.sp[s][1]} ::: {I.sp_no_tie_deletions[s]}")
+# print()
+# for p in I.plc:
+#     print(f"{p} ;;;> {I.G[p]}")
+# print()
+# for l in I.lp:
+#     print(f"{l} ;;;> {I.G[l]}")
+# print()    
+
+
+
 
 """
-    # =======================================================================
-    # lower rank edges: returns set of lower rank edges for the lecturer
-    # =======================================================================
-    def lower_rank_edges(self, graph, lecturer):
-        l_preflist = self.lp[lecturer][1][:]
-        #students at the tail of lecturer that are also in Gr
-        
-        tail = graph[lecturer][0].intersection(l_preflist[-1])
-        alpha_k = sum([self.pquota(project) for project in self.G[lecturer][1] if len(self.G[project][0]) != 0]) # can the if statement here be removed if self.G[lecturer][1] is updated?
-        d_k = self.lp[lecturer][0]
-#        dG_k, d_k = len(self.G[lecturer][0]), self.lp[lecturer][0]
-#        print(lecturer, graph[lecturer], alpha_k, d_k)
-#        print()
-        if alpha_k > d_k:            
-            # projects offered by l_k in Gr that are assigned to a student in her tail
-            lower_rank_projects = set()
-            for s in tail:
-                for p in graph[s][0].intersection(graph[lecturer][1]):                   
-                    lower_rank_projects.add(p)
-            #lower_rank_projects = set([p for p in graph[s][0].intersection(graph[lecturer][1]) for s in tail])
-            #print(lower_rank_projects)        
-            return lower_rank_projects
-        
-    
-    # =======================================================================
-    # form reduced assignment graph Gr
-    # =======================================================================
-    def reduced_assignment_graph(self):
-       
-        # to form Gr, first delete isolated student, project and lecturer vertices in G
-#        print(self.G)
-        Gr = deepcopy(self.G)
-        Gr = {k:v for k,v in Gr.items() if v[0] != set()} 
-        students_in_Gr = set([s for s in self.sp if s in Gr])
-        projects_in_Gr = set([p for p in self.plc if p in Gr])
-        lecturers_in_Gr = set([l for l in self.lp if l in Gr])
-        # make sure last elt for each project and lecturer in Gr is their true quota
-        for p in projects_in_Gr:
-            Gr[p].append(self.pquota(p))
-            # Gr[p] = [Gr(p_j), remnant of c_j, q_j]
-#            cj = self.plc[p][1]            
-#            Gr[p][1] = min(len(Gr[p][0]), cj)
-        for l in lecturers_in_Gr:
-            Gr[l].append(self.lquota(l))
-            # Gr[l] = [Gr(l_k), P_k n P_r, remnant of d_k, q_k]
-#            dk = self.lp[l][0]                
-#            Gr[l][2] = min(len(Gr[l][0]), dk)
+   
 
-#        print('(s1,p3)', self.is_bound('s1','p3','l2'))
-#        print('*************************************************************')
-        for s in students_in_Gr:
-            
-            bound_projects = set([p for p in self.G[s][0] if self.is_bound(s, p, self.plc[p][0]) is True])
-            unbound_projects = self.G[s][0].difference(bound_projects)
-            #print('---------------------------------')
-#            print(s, 'bp:', bound_projects, ' up:', unbound_projects)
-            # keep track of bound and unbound edges for s
-            # update keeps projects that changed from bound to unbound *** do no use .update
-            # or better still empty the bound and unbound projects at each iteration
-            self.G[s][1] = bound_projects
-            self.G[s][2] = unbound_projects
-#            print('before: ', s, Gr)
-            # for p_j in bound_projects, remove (s_i, p_j) from Gr and reduce quota of p_j in Gr by one
-            for bp in bound_projects:
-                
-                bl = self.plc[bp][0] # lecturer that offers bp
-#                print('::::::::>', s, bp, bl, Gr)
-                
-                Gr[s][0].remove(bp)
-                Gr[bp][0].remove(s)
-                Gr[bp][2] -= 1
-                Gr[bl][3] -= 1
-#                print(s, Gr[bp], Gr[bl])
-#                print()
-                if s in Gr[bl][0]:
-                    Gr[bl][0].remove(s)
-                    
-                #if quota of p_j in Gr is reduced to 0 or p_j becomes an
-                # isolated vertex, remove p_j from Gr                    
-                if Gr[bp][2] <= 0 and Gr[bp][0] == set():
-                    del Gr[bp]
-                    Gr[bl][1].remove(bp)
-                    projects_in_Gr.remove(bp)     
-                    
-                #if quota of l_k in Gr is reduced to 0 or l_k becomes an
-                # isolated vertex, remove l_k from Gr 
-                if Gr[bl][3] <= 0 and Gr[bl][0] == set() and Gr[bl][1] == set():
-                    del Gr[bl]
-                    lecturers_in_Gr.remove(bl)
-                        
-            # if bound_projects is non-empty, then we remove all other unbound edges
-            # incident to s_i in Gr and we delete the isolated vertex s_i
-            # we achieve this by deleting the key s from the dictionary Gr
-            if len(bound_projects) > 0:
-#                print(s, Gr[s])
-                del Gr[s]
-                # students_in_Gr.remove(s) --- cannot delete elt from a set during iteration
-                # and we can remove the unbound edges from Gr without reducing quotas
-                for up in unbound_projects:
-                    ul = self.plc[up][0] # lecturer that offers up
-                    Gr[up][0].remove(s)
-                    
-                    #if quota of p_j in Gr is reduced to 0 or p_j becomes an
-                    # isolated vertex, remove p_j from Gr                    
-                    if Gr[up][2] <= 0 or Gr[up][0] == set():
-                        del Gr[up]
-                        projects_in_Gr.remove(up)                    
-                        Gr[ul][1].remove(up)
-                        
-                    Gr[ul][0].discard(s)
-                    #if quota of l_k in Gr is reduced to 0 or l_k becomes an
-                    # isolated vertex, remove l_k from Gr
-                    if Gr[ul][3] <= 0 and Gr[ul][0] == set() and Gr[ul][1] == set():
-                        del Gr[ul]
-                        lecturers_in_Gr.remove(ul)
-#        print('***********************************')                      
-#        for k,v in Gr.items():
-#            print(k, '::>', v)
-#            print('***********************************')         
-        
-        dummy_subgraph = {}
-        # ------- extend cloned_Gr with dummy students if needed
-        for l in lecturers_in_Gr:
-            l_Grquota = Gr[l][3] # Gr[l][3] = q_k^*
-            ps_Grquota = sum([Gr[p][2] for p in Gr[l][1]])
-            s_adj_l = len(Gr[l][0]) # no of students adjacent to l in Gr
-            n1 = s_adj_l - l_Grquota
-            n2 = ps_Grquota - l_Grquota
-#            n = sum([Gr[p][2] for p in Gr[l][1]]) - l_Grquota # Gr[l][3] = q_k^*
-            # if students are more than l's quota in Gr and n > 0, proceed with dummies
-
-            if n1 > 0 and n2 > 0:
-                existing_dummies = len(dummy_subgraph)                
-                dummy_students = set(['sd'+str(i) for i in range(existing_dummies+1, existing_dummies+n2+1)])
-                students_in_Gr.update(dummy_students)
-                lower_rank_projects = self.lower_rank_edges(Gr, l)
-                Gr[l][0].update(dummy_students)
-                for dummy in dummy_students:
-                    Gr[dummy] = [set([p for p in lower_rank_projects]), set(), set()]
-                    dummy_subgraph[dummy] = [] # just a placeholder for each dummy students in the dummy subgraph
-                for project in lower_rank_projects:
-                    Gr[project][0].update(dummy_students)
-                
-        # we clone each p_j q_j^* times and populate the edges to form cloned_Gr
-        # we find maximum_matching on cloned_Gr.... 
-        # but not before we make sure each dummy students are assigned
-        
-        cloned_Gr = {}
-        for s in students_in_Gr.intersection(Gr):
-            s_cloned = set([str(i)+':'+p for p in Gr[s][0] for i in range(1, min(len(Gr[p][0]), Gr[p][2])+1)])
-            cloned_Gr[s] = s_cloned
-            if s in dummy_subgraph:
-                dummy_subgraph[s] = cloned_Gr[s]
-                    
-#        print(cloned_Gr)
-        return dummy_subgraph, cloned_Gr, Gr
-    
-    
-    # =======================================================================
-    # find critical set of students
-    # =======================================================================s    
-    def critical_set(self, graph, matching, exposed_students):
-        unvisited_students = deepcopy(exposed_students) # starts with all unassigned students (left set)
-        explored_students = set()
-        visited_projects = set()        
-
-        #we find all the students in graph reachable from a student in exposed_students via an alternating path
-        while unvisited_students:
-            s = unvisited_students.pop()
-            if s not in explored_students:
-                explored_students.add(s)
-                #follow all unvisited projects adjacent to s via an unmatched edge                
-                unmatched_p_vertices = set([p for p in graph[s] if p not in visited_projects])
-                visited_projects.update(unmatched_p_vertices)
-                # next we follow all unvisited/unexplored students 
-                # adjacent to a project in unmatched_p_vertices via a matched edge
-                for p in unmatched_p_vertices:                    
-                    if p in matching: 
-                        matched_s_vertex = matching[p]
-                        if matched_s_vertex not in explored_students.union(unvisited_students):
-                            unvisited_students.add(matched_s_vertex)
-        return explored_students
     
     # =======================================================================
     # inner repeat until loop -- terminates when self.Z is empty
@@ -677,7 +678,31 @@ print(Gr, max_flow)
     # outer repeat until loop -- terminates when every unassigned student has an empty list
     # ======================================================================= 
     def outer_repeat(self):
-        while self.unassigned_empty_list:
+        while self.unassigned_empty_list:    
+    # =======================================================================
+    # find critical set of students
+    # =======================================================================s    
+    def critical_set(self, graph, matching, exposed_students):
+        unvisited_students = deepcopy(exposed_students) # starts with all unassigned students (left set)
+        explored_students = set()
+        visited_projects = set()        
+
+        #we find all the students in graph reachable from a student in exposed_students via an alternating path
+        while unvisited_students:
+            s = unvisited_students.pop()
+            if s not in explored_students:
+                explored_students.add(s)
+                #follow all unvisited projects adjacent to s via an unmatched edge                
+                unmatched_p_vertices = set([p for p in graph[s] if p not in visited_projects])
+                visited_projects.update(unmatched_p_vertices)
+                # next we follow all unvisited/unexplored students 
+                # adjacent to a project in unmatched_p_vertices via a matched edge
+                for p in unmatched_p_vertices:                    
+                    if p in matching: 
+                        matched_s_vertex = matching[p]
+                        if matched_s_vertex not in explored_students.union(unvisited_students):
+                            unvisited_students.add(matched_s_vertex)
+        return explored_students
             self.inner_repeat()       
             self.update_project_tail()
             self.update_lecturer_tail()

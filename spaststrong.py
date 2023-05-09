@@ -451,6 +451,7 @@ class SPASTSTRONG:
     def criticalSet(self, max_flow, unhappy_students):
         ''' Every student who is unhappy will initiate the critical set        
         '''               
+        print(f"max_flow: {max_flow}")
         critical_set = set()
         unexplored_students = set([s for s in unhappy_students])
         explored_students, visited_projects = set(), set()
@@ -480,6 +481,59 @@ class SPASTSTRONG:
         assert explored_students == critical_set # another sanity check
         print(f"Critical set Zs {critical_set}\n")
         return critical_set
+
+    # =========================================================================
+    # find critical set of students in Gr (using unsaturated flow idea)
+    # relative to the matching Mr found by flow alg, and unhappy students
+    # ========================================================================= 
+    def criticalSet2(self, max_flow, unhappy_students):
+        ''' Every student who is unhappy will initiate the critical set        
+        '''               
+        critical_set = set()
+        unexplored_students = set([s for s in unhappy_students])
+        explored_students, visited_projects, explored_lecturers = set(), set(), set()
+        while unexplored_students:
+            student = unexplored_students.pop()
+            explored_students.add(student)
+            critical_set.add(student) # data structure is doing same thing as previous line
+            # follow all projects adjacent to student via an unsaturated edge
+            critical_projects = set([p for p in max_flow[student] if max_flow[student][p] == 0])
+            print(f"Initial Critical projects from {student}: {critical_projects}")
+            # from above, we want to follow projects whose flow value is less 
+            # than their revised quota in Gr to get to the lecturer
+            new_projects = set()
+            for p in critical_projects:
+                lecturer = self.plc[p][0]
+                if lecturer not in explored_lecturers and max_flow[p][lecturer] < self.G[p][4]:
+                    explored_lecturers.add(lecturer)
+                    # find all projects that lecturer offers in Gr
+                    PknPr = self.G[lecturer][1].intersection(set(max_flow.keys()))
+                    saturated_projects = set([pj for pj in PknPr if max_flow[pj][lecturer] == self.G[pj][4]])
+                    new_projects.update(saturated_projects)
+                    print(f"{lecturer}:::::> PKnPr:::> {PknPr} ----- saturated_projects::::> {saturated_projects}")
+            critical_projects.update(new_projects)
+            print(f"Critical projects: {critical_projects}")
+            for project in critical_projects:
+                if project not in visited_projects:
+                    visited_projects.add(project)
+                    # follow all students adjacent to project via a matched edge
+                    # there could be more than one of them since revised quota >= 1
+                    all_matched_students = set()
+                    # check all students adjacent to pj in G, if the student is in max_flow
+                    # and max_flow[student][project] == 1, then student is matched to the project
+                    # first get all students adjacent to project in Gr
+                    Gr_students = self.G[project][0].intersection(set(max_flow.keys()))
+                    for sr in Gr_students:
+                        if max_flow[sr][project] == 1:
+                            all_matched_students.add(sr)
+                    for st in all_matched_students:
+                        if st not in explored_students:
+                            unexplored_students.add(st)
+                        
+        assert explored_students == critical_set # another sanity check
+        print(f"Critical set Zs {critical_set}\n")
+        return critical_set
+    
     
     # =========================================================================
     # inner repeat-until loop in line 3
@@ -501,7 +555,7 @@ class SPASTSTRONG:
                 self.update_revised_quota() # update revised quota based on # of bound edges
                 max_flow = self.buildGr() # form reduced assigned graph and find Mr
                 max_flow, unhappy_students = self.unhappy_students(max_flow) # find the unhappy students in Gr
-                self.Zs = self.criticalSet(max_flow, unhappy_students) # find the critical set
+                self.Zs = self.criticalSet2(max_flow, unhappy_students) # find the critical set
                 print(self.Zs)
                 # find the projects adjacent in Gr to students in the critical set
                 N_Zs = set() 
@@ -542,7 +596,7 @@ class SPASTSTRONG:
             print()   
             # -----------------------------------------------  
     
-filename = "ex4.txt"
+filename = "ex5.txt"
 I = SPASTSTRONG(filename)
 I.inner_repeat()
 # I.update_bound_unbound()

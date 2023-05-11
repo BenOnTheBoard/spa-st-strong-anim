@@ -542,14 +542,12 @@ class SPASTSTRONG:
     def inner_repeat(self):
         self.Zs = set([None]) # storing None allows the while loop to begin
         iteration = 0
-        while self.Zs:
-            iteration +=1
-            self.Zs = set()
-            print(f"Iteration {iteration} ...............................")
+        while self.Zs:            
+            self.Zs = set()            
             self.while_loop()
-            self.update_bound_unbound() # classify edges in G as bound or unbound
-            
-            
+            iteration +=1
+            print(f"Iteration {iteration} of while loop ...............................")
+            self.update_bound_unbound() # classify edges in G as bound or unbound          
             # we form the reduced assignment graph if some student is adjacent to only unbound edges
             if self.build_Gr:                      
                 self.update_revised_quota() # update revised quota based on # of bound edges
@@ -596,7 +594,7 @@ class SPASTSTRONG:
             print()   
             # -----------------------------------------------  
     
-filename = "ex5.txt"
+filename = "ex6.txt"
 I = SPASTSTRONG(filename)
 I.inner_repeat()
 # I.update_bound_unbound()

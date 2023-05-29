@@ -2,7 +2,8 @@ from copy import deepcopy
 
 
 class READSPAST:
-    def __init__(self):
+    def __init__(self, filename):
+        self.filename = filename
         self.students = 0
         self.projects = 0
         self.lecturers = 0  # assume number of lecturers <= number of projects
@@ -18,7 +19,7 @@ class READSPAST:
         self.lp_rank = {}
         self.proj_rank = {}
 
-    def read_file(self, filename):  # reads the SPAT instance
+    def read_file(self):  # reads the SPAT instance
         """
         # !* changed type of tie from tuple to list -- tuple does not support item assignment -- at the point we will replace some projects as dp
         The entries in the file is read and it returns the format below which is consequently used to find a super-stable matching
@@ -70,7 +71,7 @@ class READSPAST:
                                     'p3': ['l1', 1, False, set(), 3, 2]}
         """
 
-        with open(filename) as t:
+        with open(self.filename) as t:
             t = t.readlines()
         entry1 = t[0].rstrip(' \n').split(' ')
         self.students, self.projects, self.lecturers = int(entry1[0]), int(entry1[1]), int(entry1[2])

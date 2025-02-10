@@ -35,7 +35,7 @@ class SPAST_STRONG_ANIM:
         self.Zp = set()
         self.Zs = set()
 
-        self.fig, self.axes = plt.subplots(1, 2)
+        self.figure, self.axes = plt.subplots(1, 2)
 
     def pquota(self, project):
         return min(self.plc[project]["cap"], len(self.G[project]["students"]))
@@ -369,23 +369,38 @@ class SPAST_STRONG_ANIM:
             self.while_loop()
             self.update_bound_unbound()
 
+            self.figure.suptitle("Post-domination assignments.")
             self.draw_SPA_graph()
             
             if self.build_Gr:                      
                 self.update_revised_quota()
                 self.max_flow, G_reduced = self.buildGr()
 
+                ### project ###
                 Up, typeII_Us = self.unhappy_projects() 
                 self.Zp = self.criticalset_projects(Up)
                 self.Zp_deletions()
 
+                self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
                 self.draw_SPA_reduced(G_reduced)
-           
+                self.draw_SPA_graph()
+
+                ### student ###
                 Us = self.unhappy_students()
                 self.Zs = self.criticalset_students(Us) 
                 self.Zs_deletions()
+
+                self.figure.suptitle(f"Critical Projects Stage, Z_s = {self.Zs}.")
+                self.draw_SPA_reduced(G_reduced)
+                self.draw_SPA_graph()
+
+                self.axes[1].clear()
     
-    def draw_plot(self, G, pos, ax):            
+    def draw_plot(self, G, pos, ax):
+
+        self.axes[0].set_title("G, the provisional assignment graph.")
+        self.axes[1].set_title("G_r, the reduced assignment graph.")
+
         nx.draw_networkx_nodes(G, pos, ax=ax)
         nx.draw_networkx_labels(G, pos, ax=ax)
         nx.draw_networkx_edges(G, pos, ax=ax)
@@ -420,7 +435,6 @@ class SPAST_STRONG_ANIM:
             pos[x] = (column[letter], number * spacing[letter])
 
         self.axes[0].clear()
-        self.axes[1].clear()
         self.draw_plot(G, pos, self.axes[0])
 
     def draw_SPA_reduced(self, Gr):
@@ -435,9 +449,7 @@ class SPAST_STRONG_ANIM:
                    "l": dist / (1 + self.num_lecturers)}
         column = {"s": 1, "p": 2, "l": 3}
 
-        for x in (Gr.nodes()):
-            if x in ("s", "t"):
-                continue
+        for x in (G_display.nodes()):
             letter = x[0]
             number = int(x[1:])
             pos[x] = (column[letter], number * spacing[letter])
@@ -445,7 +457,7 @@ class SPAST_STRONG_ANIM:
         self.axes[1].clear()
         self.draw_plot(G_display, pos, self.axes[1])
 
-filename = "ex4.txt"
+filename = "ex7.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.inner_repeat()
 print("Finished")

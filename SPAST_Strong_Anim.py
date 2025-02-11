@@ -35,7 +35,13 @@ class SPAST_STRONG_ANIM:
         self.Zp = set()
         self.Zs = set()
 
+        ### plotting ###
         self.figure, self.axes = plt.subplots(1, 2)
+        self.dist = max(self.num_students, self.num_projects, self.num_lecturers)
+        self.spacing = {"s": self.dist / (1 + self.num_students),
+                   "p": self.dist / (1 + self.num_projects),
+                   "l": self.dist / (1 + self.num_lecturers)}
+        self.column = {"s": 1, "p": 2, "l": 3}
 
     def pquota(self, project):
         return min(self.plc[project]["cap"], len(self.G[project]["students"]))
@@ -396,14 +402,22 @@ class SPAST_STRONG_ANIM:
 
                 self.axes[1].clear()
     
-    def draw_plot(self, G, pos, ax):
+    def draw_graph_plot(self, G, labels, pos, ax):
 
         self.axes[0].set_title("G, the provisional assignment graph.")
         self.axes[1].set_title("G_r, the reduced assignment graph.")
 
-        nx.draw_networkx_nodes(G, pos, ax=ax)
-        nx.draw_networkx_labels(G, pos, ax=ax)
-        nx.draw_networkx_edges(G, pos, ax=ax)
+        nx.draw(G,
+                pos,
+                with_labels = True,
+                labels=labels,
+                node_shape="s",
+                node_color="none",
+                node_size=600,
+                bbox=dict(facecolor=(0.76, 0.69, 0.88),
+                          edgecolor='black',
+                          boxstyle='round,pad=0.1'),
+                ax=ax)
         #nx.draw_networkx_edges(Gr, pos, ax=0, edgelist=M_r, edge_color='r')
         #nx.draw_networkx_edges(Gr, pos, ax=0, edgelist=G_r.edges-M_r)
 
@@ -423,19 +437,22 @@ class SPAST_STRONG_ANIM:
                     G.add_edge(pj, k)
 
         pos = dict()
-        dist = max(self.num_students, self.num_projects, self.num_lecturers)
-        spacing = {"s": dist / (1 + self.num_students),
-                   "p": dist / (1 + self.num_projects),
-                   "l": dist / (1 + self.num_lecturers)}
-        column = {"s": 1, "p": 2, "l": 3}
+        labels = dict()
 
         for x in (self.G.keys()):
             letter = x[0]
             number = int(x[1:])
-            pos[x] = (column[letter], number * spacing[letter])
+            pos[x] = (self.column[letter], number * self.spacing[letter])
+
+            if letter == 'l':
+                labels[x] = f"{x} : {self.lp[x]["cap"]}"
+            elif letter == 'p':
+                labels[x] = f"{x} : {self.plc[x]["cap"]}"
+            else:
+                labels[x] = x
 
         self.axes[0].clear()
-        self.draw_plot(G, pos, self.axes[0])
+        self.draw_graph_plot(G, labels, pos, self.axes[0])
 
     def draw_SPA_reduced(self, Gr):
         G_display = deepcopy(Gr)
@@ -443,19 +460,20 @@ class SPAST_STRONG_ANIM:
         G_display.remove_node('t')
 
         pos = dict()
-        dist = max(self.num_students, self.num_projects, self.num_lecturers)
-        spacing = {"s": dist / (1 + self.num_students),
-                   "p": dist / (1 + self.num_projects),
-                   "l": dist / (1 + self.num_lecturers)}
-        column = {"s": 1, "p": 2, "l": 3}
+        labels = dict()
 
         for x in (G_display.nodes()):
             letter = x[0]
             number = int(x[1:])
-            pos[x] = (column[letter], number * spacing[letter])
+            pos[x] = (self.column[letter], number * self.spacing[letter])
+
+            if letter in ('p','l'):
+                labels[x] = f"{x} : {self.G[x]["revised_quota"]}"
+            else:
+                labels[x] = x
 
         self.axes[1].clear()
-        self.draw_plot(G_display, pos, self.axes[1])
+        self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
 filename = "ex7.txt"
 instance = SPAST_STRONG_ANIM(filename)

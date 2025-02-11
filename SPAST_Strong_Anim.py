@@ -252,7 +252,7 @@ class SPAST_STRONG_ANIM:
                 Gr.add_edge(lk, 't', capacity = self.G[lk]["revised_quota"])
 
         max_flow = nx.max_flow_min_cost(Gr, 's', 't')
-        return max_flow, Gr
+        return max_flow
 
     def unhappy_projects(self):
         Gr_students = set(self.max_flow['s'].keys())        
@@ -394,7 +394,7 @@ class SPAST_STRONG_ANIM:
             
             if self.build_Gr:                      
                 self.update_revised_quota()
-                self.max_flow, G_reduced = self.buildGr()
+                self.max_flow = self.buildGr()
 
                 ### project ###
                 Up, typeII_Us = self.unhappy_projects() 
@@ -402,7 +402,7 @@ class SPAST_STRONG_ANIM:
                 self.Zp_deletions()
 
                 self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
-                self.draw_SPA_reduced(G_reduced)
+                self.draw_SPA_reduced()
                 self.draw_SPA_graph()
 
                 ### student ###
@@ -411,10 +411,13 @@ class SPAST_STRONG_ANIM:
                 self.Zs_deletions()
 
                 self.figure.suptitle(f"Critical Projects Stage, Z_s = {self.Zs}.")
-                self.draw_SPA_reduced(G_reduced)
+                self.draw_SPA_reduced()
                 self.draw_SPA_graph()
 
                 self.axes[1].clear()
+
+        self.figure.suptitle("End-state reached.")
+        self.draw_SPA_graph()
     
     def draw_graph_plot(self, G, labels, pos, ax):
 
@@ -466,10 +469,23 @@ class SPAST_STRONG_ANIM:
         self.axes[0].clear()
         self.draw_graph_plot(G, labels, pos, self.axes[0])
 
-    def draw_SPA_reduced(self, Gr):
-        G_display = deepcopy(Gr)
-        G_display.remove_node('s')
-        G_display.remove_node('t')
+    def max_flow_as_graph(self):
+        flow_G = nx.DiGraph()
+
+        flow_G.add_nodes_from(self.max_flow.keys())
+        flow_G.remove_node('s')
+        flow_G.remove_node('t')
+
+        for student in self.max_flow['s'].keys():
+            for project in self.max_flow[student].keys():
+                flow_G.add_edge(student, project)
+                for lecturer in self.max_flow[project].keys():
+                    flow_G.add_edge(project, lecturer)
+
+        return flow_G
+
+    def draw_SPA_reduced(self):
+        G_display = self.max_flow_as_graph()
 
         pos = dict()
         labels = dict()

@@ -43,6 +43,20 @@ class SPAST_STRONG_ANIM:
                    "l": self.dist / (1 + self.num_lecturers)}
         self.column = {"s": 1, "p": 2, "l": 3}
 
+        ### plot control panel ###
+        self.WAIT_PER_DRAW = 3
+        self.style_info = {
+            "with_labels" : True,
+            "node_shape" : "s",
+            "node_color" : "none",
+            "node_size" : 600,
+            "bbox" : {
+                "facecolor" : (0.76, 0.69, 0.88),
+                "edgecolor" : 'black',
+                "boxstyle" : 'round,pad=0.1'
+            }
+        }
+
     def pquota(self, project):
         return min(self.plc[project]["cap"], len(self.G[project]["students"]))
     
@@ -409,20 +423,18 @@ class SPAST_STRONG_ANIM:
 
         nx.draw(G,
                 pos,
-                with_labels = True,
-                labels=labels,
-                node_shape="s",
-                node_color="none",
-                node_size=600,
-                bbox=dict(facecolor=(0.76, 0.69, 0.88),
-                          edgecolor='black',
-                          boxstyle='round,pad=0.1'),
-                ax=ax)
+                with_labels = self.style_info["with_labels"],
+                labels = labels,
+                node_shape = self.style_info["node_shape"],
+                node_color = self.style_info["node_color"],
+                node_size = self.style_info["node_size"],
+                bbox = self.style_info["bbox"],
+                ax = ax)
         #nx.draw_networkx_edges(Gr, pos, ax=0, edgelist=M_r, edge_color='r')
         #nx.draw_networkx_edges(Gr, pos, ax=0, edgelist=G_r.edges-M_r)
 
         plt.show(block=False)
-        plt.pause(3)
+        plt.pause(self.WAIT_PER_DRAW)
 
     def draw_SPA_graph(self):
         G = nx.DiGraph()
@@ -475,7 +487,7 @@ class SPAST_STRONG_ANIM:
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
-filename = "ex7.txt"
+filename = "ex1.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.inner_repeat()
 print("Finished")

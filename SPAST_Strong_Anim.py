@@ -44,7 +44,7 @@ class SPAST_STRONG_ANIM:
         self.column = {"s": 1, "p": 2, "l": 3}
 
         ### plot control panel ###
-        self.WAIT_PER_DRAW = 3
+        self.WAIT_PER_DRAW = 5
         self.style_info = {
             "with_labels" : True,
             "node_shape" : "s",
@@ -399,19 +399,17 @@ class SPAST_STRONG_ANIM:
                 ### project ###
                 Up, typeII_Us = self.unhappy_projects() 
                 self.Zp = self.criticalset_projects(Up)
-                self.Zp_deletions()
-
                 self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
                 self.draw_SPA_reduced()
+                self.Zp_deletions()
                 self.draw_SPA_graph()
 
                 ### student ###
                 Us = self.unhappy_students()
-                self.Zs = self.criticalset_students(Us) 
-                self.Zs_deletions()
-
+                self.Zs = self.criticalset_students(Us)
                 self.figure.suptitle(f"Critical Projects Stage, Z_s = {self.Zs}.")
                 self.draw_SPA_reduced()
+                self.Zs_deletions()
                 self.draw_SPA_graph()
 
                 self.axes[1].clear()
@@ -472,10 +470,6 @@ class SPAST_STRONG_ANIM:
     def max_flow_as_graph(self):
         flow_G = nx.DiGraph()
 
-        flow_G.add_nodes_from(self.max_flow.keys())
-        flow_G.remove_node('s')
-        flow_G.remove_node('t')
-
         for student in self.max_flow['s'].keys():
             for project in self.max_flow[student].keys():
                 flow_G.add_edge(student, project)
@@ -503,7 +497,7 @@ class SPAST_STRONG_ANIM:
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
-filename = "ex1.txt"
+filename = "ex4.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.inner_repeat()
 print("Finished")

@@ -16,6 +16,7 @@
 from copy import deepcopy
 import random
 
+
 class HopcroftKarp(object):
     def __init__(self, graph, initial_matching={}):
         """
@@ -23,19 +24,19 @@ class HopcroftKarp(object):
         Vertices in the left and right vertex set must have different labelling
         :return: a maximum matching of the given graph represented as a dictionary.
         """
-        #self._matching = {}
+        # self._matching = {}
         self._matching = deepcopy(initial_matching)
-        #print(':::::>self.m', self._matching)
+        # print(':::::>self.m', self._matching)
         self._dfs_paths = []
         self._dfs_parent = {}
 
-        self._left = list(graph.keys())  
+        self._left = list(graph.keys())
         random.shuffle(self._left)
-        #print('self', self._left)
+        # print('self', self._left)
         self._right = set()
 
         self._graph = deepcopy(graph)
-        
+
         for value in self._graph.values():
             self._right.update(value)
         for vertex in self._left:
@@ -45,13 +46,12 @@ class HopcroftKarp(object):
                     self._graph[neighbour].add(vertex)
                 else:
                     self._graph[neighbour].add(vertex)
-        
-        #print(self._graph)
+
+        # print(self._graph)
 
         self._graph_copy = deepcopy(self._graph)
         self._exposed_lvertices = set()
         self._exposed_rvertices = set()
-        
 
     def __bfs(self):
         layers = []
@@ -67,24 +67,35 @@ class HopcroftKarp(object):
             new_layer = set()  # new list for subsequent layers
             for vertex in layer:
                 visited.add(vertex)  # we don't want to traverse the vertex again
-                if vertex in self._left:  # if true, we traverse unmatched edges to vertices in right
+                if (
+                    vertex in self._left
+                ):  # if true, we traverse unmatched edges to vertices in right
                     for neighbour in self._graph[vertex]:
                         # check if the neighbour is not already visited
                         # check if vertex is matched or the edge between neighbour and vertex is not matched
-                        if neighbour not in visited and (vertex not in self._matching or neighbour != self._matching[vertex]):
+                        if neighbour not in visited and (
+                            vertex not in self._matching
+                            or neighbour != self._matching[vertex]
+                        ):
                             new_layer.add(neighbour)
                 else:  # we traverse matched edges to vertices in left
                     for neighbour in self._graph[vertex]:
                         # check if the neighbour is not already visited
                         # check if vertex is in the matching and if the edge between vertex and neighbour is matched
-                        if neighbour not in visited and (vertex in self._matching and neighbour == self._matching[vertex]):
+                        if neighbour not in visited and (
+                            vertex in self._matching
+                            and neighbour == self._matching[vertex]
+                        ):
                             new_layer.add(neighbour)
             layers.append(new_layer)  # we add the new layer to the set of layers
             # if new_layer is empty, we have to break the BFS while loop....
             if len(new_layer) == 0:
-                return layers   # break
+                return layers  # break
             # else, we terminate search at the first layer k where one or more free vertices in V are reached
-            if any(vertex in self._right and vertex not in self._matching for vertex in new_layer):
+            if any(
+                vertex in self._right and vertex not in self._matching
+                for vertex in new_layer
+            ):
                 return layers  # break
                 # break
 
@@ -113,10 +124,15 @@ class HopcroftKarp(object):
                 # if neighbour is in left, we are traversing unmatched edges..
                 if neighbour in self._dfs_parent:
                     continue
-                if (neighbour in self._left and (v not in self._matching or neighbour != self._matching[v])) or \
-                        (neighbour in self._right and (v in self._matching and neighbour == self._matching[v])):
+                if (
+                    neighbour in self._left
+                    and (v not in self._matching or neighbour != self._matching[v])
+                ) or (
+                    neighbour in self._right
+                    and (v in self._matching and neighbour == self._matching[v])
+                ):
                     self._dfs_parent[neighbour] = v
-                    if self.__dfs(neighbour, index-1, layers):
+                    if self.__dfs(neighbour, index - 1, layers):
                         return True
         return False
 
@@ -127,53 +143,69 @@ class HopcroftKarp(object):
             # since if there are no vertices in the recent layer, then there is no way augmenting paths can be found
             if len(layers[-1]) == 0:
                 break
-            free_vertex = set([vertex for vertex in layers[-1] if vertex not in self._matching])
+            free_vertex = set(
+                [vertex for vertex in layers[-1] if vertex not in self._matching]
+            )
 
             # the maximal set of vertex-disjoint augmenting path and parent dictionary
             # has to be cleared each time the while loop runs
             # self._dfs_paths.clear() - .clear() and .copy() attribute works for python 3.3 and above
-            
+
             del self._dfs_paths[:]
             self._dfs_parent.clear()
 
-            for vertex in free_vertex:  # O(m) - every vertex considered once, each edge considered once
+            for vertex in (
+                free_vertex
+            ):  # O(m) - every vertex considered once, each edge considered once
                 # this creates a loop of the vertex to itself in the parent dictionary,
                 self._dfs_parent[vertex] = vertex
-                self.__dfs(vertex, len(layers)-1, layers)
+                self.__dfs(vertex, len(layers) - 1, layers)
 
             # if the set of paths is empty, nothing to add to the matching...break
             if len(self._dfs_paths) == 0:
                 break
 
             # if not, we swap the matched and unmatched edges in the paths formed and add them to the existing matching.
-            # the paths are augmenting implies the first and start vertices are free. Edges 1, 3, 5, .. are thus matched            
-            for path in self._dfs_paths:                
+            # the paths are augmenting implies the first and start vertices are free. Edges 1, 3, 5, .. are thus matched
+            for path in self._dfs_paths:
                 for i in range(len(path)):
-                    if i % 2 == 0:                        
-                        self._matching[path[i]] = path[i+1]
-                        self._matching[path[i+1]] = path[i]
+                    if i % 2 == 0:
+                        self._matching[path[i]] = path[i + 1]
+                        self._matching[path[i + 1]] = path[i]
         if keys_only:
-            self._matching = {k:v for k,v in self._matching.items() if k in self._left}
-        
-        self._exposed_lvertices = set([i for i in self._left if i not in self._matching])
-        self._exposed_rvertices = set([i for i in self._right if i not in self._matching])
-        
-        return self._graph_copy, self._matching, self._exposed_lvertices, self._exposed_rvertices
+            self._matching = {
+                k: v for k, v in self._matching.items() if k in self._left
+            }
 
-#g = {'u0': {'v0', 'v1'}, 'u1': {'v0', 'v4'}, 'u2': {'v2', 'v3'}, 'u3': {'v0', 'v4'}, 'u4': {'v1', 'v3'}}
-#g1 = {'u0': {'v0', 'v1'}, 'u1': {'v0', 'v4'}, 'u2': {'v2', 'v3'}, 'u3': {'v0', 'v4'}, 'u4': {'v1', 'v3'}}
-#hk = HopcroftKarp(g)
-#MX = hk.maximum_matching()
-#for key in g1:
+        self._exposed_lvertices = set(
+            [i for i in self._left if i not in self._matching]
+        )
+        self._exposed_rvertices = set(
+            [i for i in self._right if i not in self._matching]
+        )
+
+        return (
+            self._graph_copy,
+            self._matching,
+            self._exposed_lvertices,
+            self._exposed_rvertices,
+        )
+
+
+# g = {'u0': {'v0', 'v1'}, 'u1': {'v0', 'v4'}, 'u2': {'v2', 'v3'}, 'u3': {'v0', 'v4'}, 'u4': {'v1', 'v3'}}
+# g1 = {'u0': {'v0', 'v1'}, 'u1': {'v0', 'v4'}, 'u2': {'v2', 'v3'}, 'u3': {'v0', 'v4'}, 'u4': {'v1', 'v3'}}
+# hk = HopcroftKarp(g)
+# MX = hk.maximum_matching()
+# for key in g1:
 #    print(key, '--->', MX[key])
 
-#final_Gr = {'s2': {'1:p1'}, 's1': {'1:p1'}, 's4': {'1:p2', '2:p2'}, 's3': {'1:p1'}, 'sd1': {'1:p2', '2:p2'}}
-#dummy_Gr = {'sd1': {'1:p2', '2:p2'}}
-#print(HopcroftKarp({'S3': set(['A', 'C', 'B']), 'S2': set(['A', 'C', 'B']), 'S1': set(['A', 'C', 'B'])}).maximum_matching())
-        
-#    
-#Please detail, point by point, how you meet the essential criteria? (max 7500 characters)
+# final_Gr = {'s2': {'1:p1'}, 's1': {'1:p1'}, 's4': {'1:p2', '2:p2'}, 's3': {'1:p1'}, 'sd1': {'1:p2', '2:p2'}}
+# dummy_Gr = {'sd1': {'1:p2', '2:p2'}}
+# print(HopcroftKarp({'S3': set(['A', 'C', 'B']), 'S2': set(['A', 'C', 'B']), 'S1': set(['A', 'C', 'B'])}).maximum_matching())
+
 #
-#Please detail, point by point, how you meet the desirable criteria (where applicable)? If there is no desirable criteria for this vacancy please enter 'n/a' in this box and click 'save'.
+# Please detail, point by point, how you meet the essential criteria? (max 7500 characters)
 #
-#Cover letter
+# Please detail, point by point, how you meet the desirable criteria (where applicable)? If there is no desirable criteria for this vacancy please enter 'n/a' in this box and click 'save'.
+#
+# Cover letter

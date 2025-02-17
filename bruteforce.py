@@ -221,7 +221,7 @@ class STSMBruteForce:
         return self.found_stsm
    
 
-filename = "BEN.txt"
+filename = "examples/problematic/BEN.txt"
 S = STSMBruteForce(filename)
 t1 = time.time()
 result = S.choose(1)

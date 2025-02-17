@@ -497,7 +497,7 @@ class SPAST_STRONG_ANIM:
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
-filename = "ex4.txt"
+filename = "BEN.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.inner_repeat()
 print("Finished")

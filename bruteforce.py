@@ -14,8 +14,8 @@ class STSMBruteForce:
     def __init__(self, filename):
 
         self.filename = filename
-        r = READSPAST()
-        r.read_file(self.filename)
+        r = READSPAST(self.filename)
+        r.read_file()
 
         self.students = r.students # no of students
         self.projects = r.projects # no of projects
@@ -221,7 +221,7 @@ class STSMBruteForce:
         return self.found_stsm
    
 
-filename = "CT/2/instance8910.txt"
+filename = "BEN.txt"
 S = STSMBruteForce(filename)
 t1 = time.time()
 result = S.choose(1)

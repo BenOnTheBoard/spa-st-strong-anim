@@ -4,8 +4,8 @@ Created on Mon Feb 10 2025
 @author: B.W.J. Whitehead
 """
 
-import networkx as nx
 import matplotlib.pyplot as plt
+import networkx as nx
 
 from readFile import SPASTFileReader
 
@@ -581,8 +581,8 @@ class SPAST_STRONG_ANIM:
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
 
-filename = "examples/problematic/BEN.txt"
-instance = SPAST_STRONG_ANIM(filename)
-instance.inner_repeat()
-print("Finished")
-plt.pause(15)
+# filename = "examples/problematic/BEN.txt"
+# instance = SPAST_STRONG_ANIM(filename)
+# instance.inner_repeat()
+# print("Finished")
+# plt.pause(15)

@@ -1,7 +1,7 @@
 from bruteforce import STSMBruteForce
 from SPAST_Strong_Anim import SPAST_STRONG_ANIM
 
-filename = "examples/sofiat/ex3.txt"
+filename = "examples/problematic/K55.txt"
 bruteforcer = STSMBruteForce(filename)
 result = bruteforcer.choose(1)
 print(result)

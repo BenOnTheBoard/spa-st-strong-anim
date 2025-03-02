@@ -489,7 +489,7 @@ class SPAST_STRONG_ANIM:
                 ### student ###
                 Us = self.unhappy_students()
                 self.Zs = self.criticalset_students(Us)
-                self.figure.suptitle(f"Critical Projects Stage, Z_s = {self.Zs}.")
+                self.figure.suptitle(f"Critical Students Stage, Z_s = {self.Zs}.")
                 self.draw_SPA_reduced()
                 self.Zs_deletions()
                 self.draw_SPA_graph()

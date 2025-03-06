@@ -6,7 +6,7 @@ Created on Sat Dec 21 23:20:17 2019
 @author: sofiat
 """
 
-import time
+from copy import deepcopy
 
 from readinputSPAST import READSPAST
 
@@ -40,97 +40,56 @@ class STSMBruteForce:
         }
 
         self.blocking_pair = False
-        self.found_stsm = "N"
+        self.ssm_list = []
 
-    # =======================================================================
-    # blocking pair types
-    # =======================================================================
     def blockingpair_1bi(self, student, project, lecturer):
-        #  project and lecturer are both under-subscribed
         if self.plc[project][1] > 0 and self.lp[lecturer][0] > 0:
             return True
         return False
 
     def blockingpair_1bii(self, student, project, lecturer):
-        # p_j is undersubscribed, l_k is full and either s_i \in M(l_k)
-        # or l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
         if self.plc[project][1] > 0 and self.lp[lecturer][0] == 0:
             proj_in_M = self.M[student]
-            if (
-                proj_in_M != "" and self.plc[proj_in_M][0] == lecturer
-            ):  # i.e., s_i \in M(l_k)
+            if proj_in_M != "" and self.plc[proj_in_M][0] == lecturer:
                 return True
             lec_worst_pointer = self.lecturer_wstcounter[lecturer][0]
             student_rank_Lk = self.lp_rank[lecturer][student]
-            if (
-                student_rank_Lk <= lec_worst_pointer
-            ):  # l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
+            if student_rank_Lk <= lec_worst_pointer:
                 return True
         return False
 
     def blockingpair_1biii(self, student, project, lecturer):
-        # p_j is full and l_k prefers s_i to the worst student in M(p_j) or is indifferent between them
         if self.plc[project][1] == 0:
             proj_worst_pointer = self.project_wstcounter[project][0]
             student_rank_Lkj = self.proj_rank[project][student]
-            if (
-                student_rank_Lkj <= proj_worst_pointer
-            ):  # l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
+            if student_rank_Lkj <= proj_worst_pointer:
                 return True
         return False
 
     def blockingpair_2bi(self, student, project, lecturer):
-        #  project and lecturer are both under-subscribed, and s_i \notin M(l_k)
         if self.plc[project][1] > 0 and self.lp[lecturer][0] > 0:
-            #            proj_in_M = self.M[student]
-            #            if proj_in_M == '' or self.plc[proj_in_M][0] != lecturer: # i.e., s_i \notin M or s_i \notin M(l_k)
             return True
         return False
 
-    #    def blockingpair_2bii(self, student, project, lecturer):
-    #        # p_j is undersubscribed, l_k is full, s_i \notin M(l_k)
-    #        # and l_k prefers s_i to the worst student in M(l_k)
-    #        if self.plc[project][1] > 0 and self.lp[lecturer][0] == 0:
-    #            proj_in_M = self.M[student]
-    #            if proj_in_M == ''  or self.plc[proj_in_M][0] != lecturer: # i.e., s_i \notin M or s_i \notin M(l_k)
-    #                lec_worst_pointer = self.lecturer_wstcounter[lecturer][0]
-    #                student_rank_Lk = self.lp_rank[lecturer][student]
-    #                if student_rank_Lk < lec_worst_pointer: # l_k prefers s_i to the worst student in M(l_k)
-    #                    return True
-    #
-    #        return False
     def blockingpair_2bii(self, student, project, lecturer):
-        # p_j is undersubscribed, l_k is full and either s_i \in M(l_k)
-        # or l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
         if self.plc[project][1] > 0 and self.lp[lecturer][0] == 0:
             proj_in_M = self.M[student]
-            if (
-                proj_in_M != "" and self.plc[proj_in_M][0] == lecturer
-            ):  # i.e., s_i \in M(l_k)
+            if proj_in_M != "" and self.plc[proj_in_M][0] == lecturer:
                 return True
             lec_worst_pointer = self.lecturer_wstcounter[lecturer][0]
             student_rank_Lk = self.lp_rank[lecturer][student]
-            if (
-                student_rank_Lk < lec_worst_pointer
-            ):  # l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
+            if student_rank_Lk < lec_worst_pointer:
                 return True
         return False
 
     def blockingpair_2biii(self, student, project, lecturer):
-        # p_j is full and l_k prefers s_i to the worst student in M(p_j)
         if self.plc[project][1] == 0:
             proj_worst_pointer = self.project_wstcounter[project][0]
             student_rank_Lkj = self.proj_rank[project][student]
-            if (
-                student_rank_Lkj < proj_worst_pointer
-            ):  # l_k prefers s_i to the worst student in M(l_k) or is indifferent between them
+            if student_rank_Lkj < proj_worst_pointer:
                 return True
         return False
 
-    # =======================================================================
-    # Is M strongly stable? Check for blocking pair
-    # self.blocking_pair is set to True if blocking pair exists
-    # =======================================================================
     def check_stability(self):
         self.blocking_pair = False
         for student in self.sp:
@@ -144,9 +103,7 @@ class STSMBruteForce:
                 preferred_projects = [
                     s for tie in A_si[:rank_matched_project] for s in tie
                 ]
-                indifference = A_si[rank_matched_project][
-                    :
-                ]  # deep copy the tie containing M(s_i)
+                indifference = A_si[rank_matched_project][:]
                 indifference.remove(matched_project)
 
             for project in preferred_projects:
@@ -163,7 +120,6 @@ class STSMBruteForce:
                     self.blocking_pair = self.blockingpair_1biii(
                         student, project, lecturer
                     )
-                    # print(student, project, lecturer, self.blocking_pair)
                 if self.blocking_pair:
                     break
 
@@ -184,13 +140,11 @@ class STSMBruteForce:
                 if self.blocking_pair:
                     break
 
-            # terminate check_stability() as soon as a blocking pair is found
             if self.blocking_pair:
                 break
 
     def choose(self, i):
         if i > self.students:
-            # update the project and lecturer worst counter
             for project in self.plc:
                 if self.project_wstcounter[project][1] != []:
                     self.project_wstcounter[project][0] = max(
@@ -202,20 +156,9 @@ class STSMBruteForce:
                         self.lecturer_wstcounter[lecturer][1]
                     )
 
-            # find a blocking pair and set self.blocking_pair to True
             self.check_stability()
-            #            matching = {'s1': 'p2', 's2': 'p1', 's3': 'p2'}
-            #            if self.M == matching:
-            #                print(len(self.M), self.blocking_pair)
-            #
-
             if self.blocking_pair is False:
-                self.found_stsm = "Y"
-                # exit()
-
-                # uncomment the next two lines to print a STSM
-                # print('A strongly stable matching is: ')
-                print(self.M)
+                self.ssm_list.append(deepcopy(self.M))
 
         else:
             student = "s" + str(i)
@@ -223,12 +166,10 @@ class STSMBruteForce:
                 lecturer = self.plc[project][0]
                 if self.plc[project][1] > 0 and self.lp[lecturer][0] > 0:
                     self.M[student] = project
-                    # decrement the capacity of project and lecturer
+
                     self.plc[project][1] -= 1
                     self.lp[lecturer][0] -= 1
 
-                    # append the rank of the student currently assigned to each project and lecturer
-                    # amend read file to consider student index
                     student_rank_Lk = self.lp_rank[lecturer][student]
                     student_rank_Lkj = self.proj_rank[project][student]
                     self.project_wstcounter[project][1].append(student_rank_Lkj)
@@ -240,21 +181,12 @@ class STSMBruteForce:
                     student_rank_Lk = self.lp_rank[lecturer][student]
                     student_rank_Lkj = self.proj_rank[project][student]
 
-                    # remove the student's index from the current assignees of the project and lecturer
                     self.project_wstcounter[project][1].remove(student_rank_Lkj)
                     self.lecturer_wstcounter[lecturer][1].remove(student_rank_Lk)
 
-                    # increment project and lecturer capacity
                     self.plc[project][1] += 1
                     self.lp[lecturer][0] += 1
             self.choose(i + 1)
 
-        return self.found_stsm
-
-
-# filename = "examples/problematic/BEN.txt"
-# S = STSMBruteForce(filename)
-# t1 = time.time()
-# result = S.choose(1)
-# t2 = time.time()
-# print(result)
+    def get_ssm_list(self):
+        return self.ssm_list

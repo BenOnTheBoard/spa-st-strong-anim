@@ -61,4 +61,5 @@ def single_test(filepath):
         print(f"{filepath}:\t\tfail")
 
 
-single_test("examples/K instances/K33.txt")
+all_tests()
+# single_test("examples/K instances/K33.txt")

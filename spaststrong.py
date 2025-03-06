@@ -463,7 +463,7 @@ class SPAST_STRONG:
                     return student
         raise ValueError("most_preferred_reject found nobody")
 
-    def tail_better_than(self, lecturer, reject):
+    def tail_worse(self, lecturer, reject):
         lecturer_tail = self.get_lecturer_tail(lecturer)
         found_reject = False
         found_tail = False
@@ -474,9 +474,9 @@ class SPAST_STRONG:
             if reject in tie:
                 found_reject = True
 
-            if found_reject:
+            if found_tail:
                 return False
-            elif found_tail:
+            if found_reject:
                 return True
 
     def get_lecturer_tail(self, lecturer):
@@ -498,7 +498,9 @@ class SPAST_STRONG:
                 lk = pj_info["lec"]
                 sr = self.most_preferred_reject(pj)
 
-                if self.tail_better_than(lk, sr):
+                tail_worse = self.tail_worse(lk, sr)
+
+                if tail_worse:
                     for st in self.get_lecturer_tail(lk):
                         for pu in self.get_acceptable_offered_projects(lk, st):
                             self.delete(st, pu, lk)

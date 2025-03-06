@@ -1,9 +1,3 @@
-"""
-Created on Mon Feb 10 2025
-
-@author: B.W.J. Whitehead
-"""
-
 import matplotlib.pyplot as plt
 import networkx as nx
 

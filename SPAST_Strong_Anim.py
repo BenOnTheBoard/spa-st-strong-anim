@@ -360,31 +360,23 @@ class SPAST_STRONG_ANIM:
         return explored_projects
 
     def Zp_deletions(self):
-        for project in self.Zp:
-            lecturer = self.plc[project]["lec"]
+        gr_nbhoods = {p: set() for p in self.plc.keys()}
+        for student in self.max_flow["s"].keys():
+            for project in self.max_flow[student].keys():
+                gr_nbhoods[project].add(student)
 
-            project_flow = self.max_flow[project][lecturer]
-            self.max_flow[lecturer]["t"] -= project_flow
-            del self.max_flow[project]
+        for lk, lk_info in self.lp.items():
+            pk_crit = lk_info["projects"] & self.Zp
+            if not pk_crit:
+                continue
 
-            Gr_students = list(self.max_flow["s"].keys())
-            for student in Gr_students:
-                if project in self.max_flow[student]:
-                    student_flow = self.max_flow[student][project]
-                    self.max_flow["s"][student] -= student_flow
-                    del self.max_flow[student][project]
-
-                    if self.max_flow[student] == dict():
-                        del self.max_flow["s"][student]
-
-            Lkj_students = self.plc[project]["list"]
-            Lkj_tail_index = self.plc[project]["tail_idx"]
-            Lkj_tail = Lkj_students[Lkj_tail_index]
-            for st in Lkj_tail:
-                self.delete(st, project, lecturer)
-
-            self.plc[project]["list"] = self.plc[project]["list"][:Lkj_tail_index]
-            self.plc[project]["tail_idx"] -= 1
+            for px in pk_crit:
+                for py in pk_crit:
+                    if px == py:
+                        continue
+                    for sz in gr_nbhoods[px] & gr_nbhoods[py]:
+                        self.delete(sz, px, lk)
+                        self.delete(sz, py, lk)
 
     def unhappy_students(self):
         Gr_students = set(self.max_flow["s"].keys())
@@ -472,14 +464,6 @@ class SPAST_STRONG_ANIM:
                 self.update_revised_quota()
                 self.max_flow = self.buildGr()
 
-                ### project ###
-                Up, typeII_Us = self.unhappy_projects()
-                self.Zp = self.criticalset_projects(Up)
-                self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
-                self.draw_SPA_reduced()
-                self.Zp_deletions()
-                self.draw_SPA_graph()
-
                 ### student ###
                 Us = self.unhappy_students()
                 self.Zs = self.criticalset_students(Us)
@@ -487,6 +471,15 @@ class SPAST_STRONG_ANIM:
                 self.draw_SPA_reduced()
                 self.Zs_deletions()
                 self.draw_SPA_graph()
+
+                if not self.Zs:
+                    ### project ###
+                    Up, typeII_Us = self.unhappy_projects()
+                    self.Zp = self.criticalset_projects(Up)
+                    self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
+                    self.draw_SPA_reduced()
+                    self.Zp_deletions()
+                    self.draw_SPA_graph()
 
                 self.axes[1].clear()
 
@@ -575,8 +568,8 @@ class SPAST_STRONG_ANIM:
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
 
-# filename = "examples/problematic/BEN.txt"
-# instance = SPAST_STRONG_ANIM(filename)
-# instance.inner_repeat()
-# print("Finished")
-# plt.pause(15)
+filename = "examples/K instances/K33.txt"
+instance = SPAST_STRONG_ANIM(filename)
+instance.inner_repeat()
+print("Finished")
+plt.pause(15)

@@ -1,9 +1,11 @@
+from copy import deepcopy
+
 import networkx as nx
 
 from readFile import SPASTFileReader
 
 
-class SPAST_STRONG_ANIM:
+class SPAST_STRONG:
     def __init__(self, filename):
         self.filename = filename
 
@@ -19,7 +21,11 @@ class SPAST_STRONG_ANIM:
         self.plc = r.plc
         self.lp = r.lp
 
-        self.unassigned_empty_list = list(self.sp.keys())
+        self.og_sp = deepcopy(self.sp)
+        self.og_plc = deepcopy(self.plc)
+        self.og_lp = deepcopy(self.lp)
+
+        self.unassigned_and_non_empty_list = list(self.sp.keys())
         self.G = {}
         for student in self.sp.keys():
             self.G[student] = {"projects": set(), "bound": set(), "unbound": set()}
@@ -40,6 +46,7 @@ class SPAST_STRONG_ANIM:
                 "revised_quota": 0,
             }
 
+        self.M = {}
         self.build_Gr = False
         self.max_flow = {}
         self.Zp = set()
@@ -89,10 +96,10 @@ class SPAST_STRONG_ANIM:
 
         if (
             len(self.G[student]["projects"]) == 0
-            and student not in self.unassigned_empty_list
+            and student not in self.unassigned_and_non_empty_list
             and len(self.sp_no_tie_deletions[student]) > 0
         ):
-            self.unassigned_empty_list.append(student)
+            self.unassigned_and_non_empty_list.append(student)
 
     def p_dominated_students(self, project):
         qpj = self.pquota(project)
@@ -144,8 +151,8 @@ class SPAST_STRONG_ANIM:
         return None
 
     def while_loop(self):
-        while self.unassigned_empty_list:
-            student = self.unassigned_empty_list.pop(0)
+        while self.unassigned_and_non_empty_list:
+            student = self.unassigned_and_non_empty_list.pop(0)
             tie_at_head = self.next_tie_student_head(student)
             if tie_at_head is not None:
                 for project in tie_at_head:
@@ -188,16 +195,16 @@ class SPAST_STRONG_ANIM:
 
             if (
                 len(self.G[student]["projects"]) != 0
-                and student in self.unassigned_empty_list
+                and student in self.unassigned_and_non_empty_list
             ):
-                self.unassigned_empty_list.remove(student)
+                self.unassigned_and_non_empty_list.remove(student)
 
             if (
                 len(self.G[student]["projects"]) == 0
-                and student not in self.unassigned_empty_list
+                and student not in self.unassigned_and_non_empty_list
                 and len(self.sp_no_tie_deletions[student]) > 0
             ):
-                self.unassigned_empty_list.append(student)
+                self.unassigned_and_non_empty_list.append(student)
 
     def is_bound(self, student, project, lecturer):
         p_tail_idx = self.plc[project]["tail_idx"]
@@ -454,7 +461,97 @@ class SPAST_STRONG_ANIM:
                 self.Zs = self.criticalset_students(Us)
                 self.Zs_deletions()
 
-# filename = "examples/problematic/BEN.txt"
-# instance = SPAST_STRONG_ANIM(filename)
-# instance.inner_repeat()
+    def most_preferred_reject(self, project):
+        rejects = self.G[project]["rejected"]
+
+        for tie in self.og_plc[project]["list"]:
+            for student in tie:
+                if student in rejects:
+                    return student
+        raise ValueError("most_preferred_reject found nobody")
+
+    def tail_better_than(self, lecturer, reject):
+        lecturer_tail = self.get_lecturer_tail(lecturer)
+        found_reject = False
+        found_tail = False
+        for tie in self.og_lp[lecturer]["list"]:
+            for student in tie:
+                if student in lecturer_tail:
+                    found_tail = True
+            if reject in tie:
+                found_reject = True
+
+            if found_reject:
+                return False
+            elif found_tail:
+                return True
+
+    def get_lecturer_tail(self, lecturer):
+        info = self.lp[lecturer]
+        return info["list"][info["tail_idx"]]
+
+    def get_acceptable_offered_projects(self, lecturer, student):
+        results = []
+        Pk = self.og_lp[lecturer]["projects"]
+        for tie in self.og_sp[student]["list"]:
+            for project in tie:
+                if project in Pk:
+                    results.append(project)
+        return results
+
+    def repletion_deletions(self):
+        for pj, pj_info in self.plc.items():
+            if self.G[pj]["replete"] and self.pquota(pj) < self.plc[pj]["cap"]:
+                lk = pj_info["lec"]
+                sr = self.most_preferred_reject(pj)
+
+                if self.tail_better_than(lk, sr):
+                    for st in self.get_lecturer_tail(lk):
+                        for pu in self.get_acceptable_offered_projects(lk, st):
+                            self.delete(st, pu, lk)
+
+    def get_feasible_matching(self):
+        Gf = nx.DiGraph()
+        for si in self.sp:
+            Gf.add_edge("s", si, capacity=1)
+            if self.G[si]["bound"]:
+                for pj in self.G[si]["bound"]:
+                    Gf.add_edge(si, pj, capacity=1)
+
+            elif self.G[si]["unbound"]:
+                for pj in self.G[si]["unbound"]:
+                    Gf.add_edge(si, pj, capacity=1)
+
+        for lk in self.lp:
+            for pj in self.G[lk]["projects"]:
+                Gf.add_edge(pj, lk, capacity=self.plc[pj]["cap"])
+            Gf.add_edge(lk, "t", capacity=self.lp[lk]["cap"])
+
+        feasible_max_flow = nx.max_flow_min_cost(Gf, "s", "t")
+        self.max_flow_to_feasible_matching(feasible_max_flow)
+
+    def max_flow_to_feasible_matching(self, feasible_max_flow):
+        self.M = {s: "" for s in self.sp}
+        for s in self.sp:
+            if s not in feasible_max_flow:
+                self.M[s] = ""
+                continue
+            else:
+                self.M[s] = list(feasible_max_flow.keys())[0]
+
+    def run(self):
+        while self.unassigned_and_non_empty_list:
+            self.inner_repeat()  # lines 2 - 26
+            self.repletion_deletions()  # lines 27 - 34
+
+        self.update_bound_unbound()
+        self.get_feasible_matching()
+
+        return self.M
+
+
+# filename = "examples/sofiat/ex3.txt"
+# instance = SPAST_STRONG(filename)
+# instance.run()
+# print(instance.G)
 # print("Finished")

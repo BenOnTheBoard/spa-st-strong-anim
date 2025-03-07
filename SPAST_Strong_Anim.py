@@ -65,9 +65,6 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
 
                 self.axes[1].clear()
 
-        self.figure.suptitle("End-state reached.")
-        self.draw_SPA_graph()
-
     def draw_graph_plot(self, G, labels, pos, ax):
         self.axes[0].set_title("G, the provisional assignment graph.")
         self.axes[1].set_title("G_r, the reduced assignment graph.")
@@ -149,9 +146,22 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
+    def run(self):
+        while self.unassigned_and_non_empty_list:
+            self.inner_repeat()  # lines 2 - 26
+            self.repletion_deletions()  # lines 27 - 34
 
-filename = "examples/K instances/K33.txt"
+            self.figure.suptitle("Post-repletion deletions.")
+            self.draw_SPA_graph()
+
+        self.update_bound_unbound()
+        self.get_feasible_matching()
+
+        return self.M
+
+
+filename = "examples/sofiat/ex4.txt"
 instance = SPAST_STRONG_ANIM(filename)
-instance.inner_repeat()
+instance.run()
 print("Finished")
 plt.pause(15)

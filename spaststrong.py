@@ -48,6 +48,8 @@ class SPAST_STRONG:
 
         self.M = {}
         self.build_Gr = False
+        self.usable_Mr = False
+        self.Mr_prefigure_flow = {}
         self.max_flow = {}
         self.Zp = set()
         self.Zs = set()
@@ -433,6 +435,8 @@ class SPAST_STRONG:
             self.plc[project]["tail_idx"] -= 1
 
     def inner_repeat(self):
+        self.usable_Mr = False
+
         self.Zs, self.Zp = set([None]), set([None])
         while self.Zs.union(self.Zp):
             self.Zs, self.Zp = set(), set()
@@ -453,6 +457,10 @@ class SPAST_STRONG:
                     Up, typeII_Us = self.unhappy_projects()
                     self.Zp = self.criticalset_projects(Up)
                     self.Zp_deletions()
+
+                    if not self.Zp:
+                        self.usable_Mr = True
+                        self.Mr_prefigure_flow = deepcopy(self.max_flow)
 
     def most_preferred_reject(self, project):
         rejects = self.G[project]["rejected"]

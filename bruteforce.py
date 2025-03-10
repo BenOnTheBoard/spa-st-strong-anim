@@ -143,7 +143,7 @@ class STSMBruteForce:
             if self.blocking_pair:
                 break
 
-    def choose(self, i):
+    def choose(self, i=1):
         if i > self.students:
             for project in self.plc:
                 if self.project_wstcounter[project][1] != []:

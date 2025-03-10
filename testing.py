@@ -45,13 +45,14 @@ def test(filename, verbose=False):
 
 def all_tests():
     for subdir, _, files in os.walk("examples"):
+        print(f"{subdir}:")
         for filename in files:
             if filename.endswith(".txt"):
                 filepath = subdir + os.sep + filename
                 if test(filepath):
-                    print(f"{filename}:\tpass\t")
+                    print(f"\t{filename}:\tpass\t")
                 else:
-                    print(f"{filename}:\t\tfail")
+                    print(f"\t{filename}:\t\tfail")
 
 
 def single_test(filepath):

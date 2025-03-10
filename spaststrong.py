@@ -487,9 +487,53 @@ class SPAST_STRONG:
             if found_tail:
                 return False
 
+    def tail_worse(self, lecturer, reject):
+        lecturer_tail = self.get_lecturer_tail(lecturer)
+        found_reject = False
+        found_tail = False
+        for tie in self.og_lp[lecturer]["list"]:
+            for student in tie:
+                if student in lecturer_tail:
+                    found_tail = True
+            if reject in tie:
+                found_reject = True
+
+            if found_tail:
+                return False
+            if found_reject:
+                return True
+
     def get_lecturer_tail(self, lecturer):
         info = self.lp[lecturer]
         return info["list"][info["tail_idx"]]
+
+    def project_neighbourhood_comparison(self, student, project, neighbourhood):
+        """
+        1 - student prefers project to something in neighbourhood
+        0 - student prefers project to something in neighbourhood
+        -1 - neither
+        """
+        student_ranking = self.sp[student]["list_rank"]
+        project_rank = student_ranking[project][0]
+        indifference = False
+        strict_preference = False
+
+        for pn in neighbourhood:
+            pn_rank = student_ranking[pn][0]
+            if pn_rank < project_rank:
+                strict_preference = True
+            elif pn_rank == project_rank:
+                indifference = True
+
+        if strict_preference and indifference:
+            raise ValueError("Oh the horror")
+
+        if strict_preference:
+            return 1
+        elif indifference:
+            return 0
+        else:
+            return -1
 
     def get_acceptable_offered_projects(self, lecturer, student):
         results = []
@@ -500,18 +544,30 @@ class SPAST_STRONG:
                     results.append(project)
         return results
 
+    def repletion_tail_wipe(self, lk):
+        for st in self.get_lecturer_tail(lk):
+            for pu in self.get_acceptable_offered_projects(lk, st):
+                self.delete(st, pu, lk)
+
     def repletion_deletions(self):
         for pj, pj_info in self.plc.items():
             if self.G[pj]["replete"] and self.pquota(pj) < self.plc[pj]["cap"]:
                 lk = pj_info["lec"]
                 sr = self.most_preferred_reject(pj)
+                nsr = self.G[sr]["projects"]
 
-                tail_no_better = self.tail_no_better(lk, sr)
+                if len(nsr) == 0:
+                    if self.tail_no_better(lk, sr):
+                        self.repletion_tail_wipe(lk)
+                else:
+                    comp = self.project_neighbourhood_comparison(sr, pj, nsr)
+                    if comp == 1:
+                        if self.tail_no_better(lk, sr):
+                            self.repletion_tail_wipe(lk)
 
-                if tail_no_better:
-                    for st in self.get_lecturer_tail(lk):
-                        for pu in self.get_acceptable_offered_projects(lk, st):
-                            self.delete(st, pu, lk)
+                    if comp == 0:
+                        if self.tail_worse(lk, sr):
+                            self.repletion_tail_wipe(lk)
 
     def get_feasible_matching(self):
         Gf = nx.DiGraph()
@@ -536,11 +592,9 @@ class SPAST_STRONG:
     def max_flow_to_feasible_matching(self, feasible_max_flow):
         self.M = {s: "" for s in self.sp}
         for s in self.sp:
-            if s not in feasible_max_flow:
-                self.M[s] = ""
-                continue
-            else:
-                self.M[s] = list(feasible_max_flow.keys())[0]
+            for p, flow in feasible_max_flow[s].items():
+                if flow == 1:
+                    self.M[s] = p
 
     def run(self):
         while self.unassigned_and_non_empty_list:
@@ -551,10 +605,3 @@ class SPAST_STRONG:
         self.get_feasible_matching()
 
         return self.M
-
-
-# filename = "examples/sofiat/ex3.txt"
-# instance = SPAST_STRONG(filename)
-# instance.run()
-# print(instance.G)
-# print("Finished")

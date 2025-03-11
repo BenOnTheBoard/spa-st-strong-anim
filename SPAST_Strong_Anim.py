@@ -19,7 +19,8 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.column = {"s": 1, "p": 2, "l": 3}
 
         ### plot control panel ###
-        self.WAIT_PER_DRAW = 5
+        self.WAIT_PER_DRAW = 20
+        self.END_WAIT = 40
         self.style_info = {
             "with_labels": True,
             "node_shape": "s",
@@ -156,12 +157,12 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
 
         self.update_bound_unbound()
         self.get_feasible_matching()
+        plt.pause(self.END_WAIT)
 
         return self.M
 
 
-filename = "examples/sofiat/ex4.txt"
+filename = "examples/misc/5530simple.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")
-plt.pause(15)

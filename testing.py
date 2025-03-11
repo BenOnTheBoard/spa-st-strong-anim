@@ -44,15 +44,19 @@ def test(filename, verbose=False):
 
 
 def all_tests(verbose=False):
+    wins = 0
+    seen = 0
     for subdir, _, files in os.walk("examples"):
         print(f"{subdir}:")
         for filename in files:
             if filename.endswith(".txt"):
                 filepath = subdir + os.sep + filename
+                seen += 1
                 if test(filepath, verbose=verbose):
-                    print(f"\t{filename}:\tpass\t")
+                    wins += 1
+                    print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
                 else:
-                    print(f"\t{filename}:\t\tfail")
+                    print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
                 if verbose:
                     print("\n\n")
 

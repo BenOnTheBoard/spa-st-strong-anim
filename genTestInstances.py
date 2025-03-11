@@ -1,27 +1,30 @@
+import os
+import random
+import shutil
 from itertools import product
 
 import numpy as np
-import random
-import os
-import shutil
+from tqdm import tqdm
 
 from instanceGenerator import SPASTIG
 
 ######
 # Panel:
-DENSITY_STEPS = 5
-FILES_PER_DENSITY_PAIR = 5
+DENSITY_STEPS = 8
+FILES_PER_DENSITY_PAIR = 100
 DIRECTORY = "examples/gen/"
 ######
 
+print("Directory cleanup...")
 if os.path.isdir(DIRECTORY):
     shutil.rmtree(DIRECTORY)
 os.mkdir(DIRECTORY)
+print("Cleanup done.")
 
 density_levels = np.arange(0, 1, 1 / DENSITY_STEPS)
-density_pairs = product(density_levels, density_levels)
+density_pairs = list(product(density_levels, density_levels))
 
-for densities in density_pairs:
+for densities in tqdm(density_pairs):
     students = random.randint(1, 4)
     projects = random.randint(1, 16)
     lecturers = random.randint(1, projects)
@@ -37,5 +40,4 @@ for densities in density_pairs:
             lecturer_tie_density=densities[1],
         )
         filename = f"{DIRECTORY}{int(densities[0] * DENSITY_STEPS)}_{int(densities[1] * DENSITY_STEPS)}_{k}.txt"
-        print(filename)
         S.write_instance_with_ties(filename)

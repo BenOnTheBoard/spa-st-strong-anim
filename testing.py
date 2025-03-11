@@ -43,22 +43,27 @@ def test(filename, verbose=False):
         return False
 
 
-def all_tests():
+def all_tests(verbose=False):
     for subdir, _, files in os.walk("examples"):
         print(f"{subdir}:")
         for filename in files:
             if filename.endswith(".txt"):
                 filepath = subdir + os.sep + filename
-                single_test(filepath)
+                if test(filepath, verbose=verbose):
+                    print(f"\t{filename}:\tpass\t")
+                else:
+                    print(f"\t{filename}:\t\tfail")
+                if verbose:
+                    print("\n\n")
 
 
-def single_test(filepath):
-    if test(filepath):
+def single_test(filepath, verbose=True):
+    if test(filepath, verbose=verbose):
         print(f"{filepath}:\tpass\t")
     else:
         print(f"{filepath}:\t\tfail")
 
 
-# all_tests()
+all_tests()
 # single_test("examples/K instances/K33.txt")
-single_test("examples/sofiat/ex8.txt")
+# single_test("examples/sofiat/ex4.txt")

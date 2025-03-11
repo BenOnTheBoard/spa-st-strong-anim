@@ -159,12 +159,15 @@ class SPASTIG:
             # to decide if a project will be tied with its successor..
             # if student_tie_density = 0, no tie in the preference list
             # if student_tie_density = 1, the preference list is a single tie
-            preference_with_ties = [[preference[0]]]
-            for project in preference[1:]:
-                if random.uniform(0, 1) <= self.student_tie_density:
-                    preference_with_ties[-1].append(project)
-                else:
-                    preference_with_ties.append([project])
+            if preference:
+                preference_with_ties = [[preference[0]]]
+                for project in preference[1:]:
+                    if random.uniform(0, 1) <= self.student_tie_density:
+                        preference_with_ties[-1].append(project)
+                    else:
+                        preference_with_ties.append([project])
+            else:
+                preference_with_ties = []
             self.sp[student].append(preference_with_ties)
 
         # -----------------------------------------------------------------------------------------------------------------------------------------
@@ -237,75 +240,72 @@ class SPASTIG:
                 # ---------------------------------------------------------------------------------------------------------------------------------------
                 I.close()
 
-    def write_instance_with_ties(
-        self, filename
-    ):  # writes the SPA-ST instance to a txt file
-        if __name__ == "__main__":
-            self.instance_generator_no_ties()
-            self.instance_generator_with_ties()
+    def write_instance_with_ties(self, filename):
+        self.instance_generator_no_ties()
+        self.instance_generator_with_ties()
 
-            with open(filename, "w") as I:
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                #  ...write number of student (n) number of projects (m) number of lecturers (k) ---- for convenience, they are all separated by space
-                I.write(
-                    str(self.students)
-                    + " "
-                    + str(self.projects)
-                    + " "
-                    + str(self.lecturers)
-                    + "\n"
-                )
-                # ---------------------------------------------------------------------------------------------------------------------------------------
+        with open(filename, "w") as I:
+            # ---------------------------------------------------------------------------------------------------------------------------------------
+            #  ...write number of student (n) number of projects (m) number of lecturers (k) ---- for convenience, they are all separated by space
+            I.write(
+                str(self.students)
+                + " "
+                + str(self.projects)
+                + " "
+                + str(self.lecturers)
+                + "\n"
+            )
+            # ---------------------------------------------------------------------------------------------------------------------------------------
 
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                # .. write the students index and their corresponding preferences ---- 1 2 3 1 7
-                for n in range(1, self.students + 1):
-                    preference = self.sp["s" + str(n)][-1]
-                    I.write(str(n) + " ")
-                    for tie in preference:
-                        if len(tie) == 1:
-                            I.write(str(tie[0][1:]) + " ")
-                        else:
-                            I.write("(")
-                            # print(preference)
-                            # print(tie)
-                            sliced = [i[1:] for i in tie]
-                            # print(sliced)
-                            for j in range(len(sliced) - 1):
-                                I.write(str(sliced[j]) + ":")
-                            I.write(str(sliced[-1]) + ")" + " ")
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
+            # ---------------------------------------------------------------------------------------------------------------------------------------
+            # .. write the students index and their corresponding preferences ---- 1 2 3 1 7
+            for n in range(1, self.students + 1):
+                preference = self.sp["s" + str(n)][-1]
+                I.write(str(n) + " ")
+                for tie in preference:
+                    if len(tie) == 1:
+                        I.write(str(tie[0][1:]) + " ")
+                    else:
+                        I.write("(")
+                        # print(preference)
+                        # print(tie)
+                        sliced = [i[1:] for i in tie]
+                        # print(sliced)
+                        for j in range(len(sliced) - 1):
+                            I.write(str(sliced[j]) + ":")
+                        I.write(str(sliced[-1]) + ")" + " ")
+                I.write("\n")
+            # ---------------------------------------------------------------------------------------------------------------------------------------
 
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                #  ..write the projects index, its capacity and the lecturer who proposed it ------- 1 5 1
-                for m in range(1, self.projects + 1):
-                    project = "p" + str(m)
-                    capacity = self.plc[project][0]
-                    lecturer = self.plc[project][1][1:]
-                    I.write(str(m) + " " + str(capacity) + " " + str(lecturer))
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
+            # ---------------------------------------------------------------------------------------------------------------------------------------
+            #  ..write the projects index, its capacity and the lecturer who proposed it ------- 1 5 1
+            for m in range(1, self.projects + 1):
+                project = "p" + str(m)
+                capacity = self.plc[project][0]
+                lecturer = self.plc[project][1][1:]
+                I.write(str(m) + " " + str(capacity) + " " + str(lecturer))
+                I.write("\n")
+            # ---------------------------------------------------------------------------------------------------------------------------------------
 
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                # .. write the lecturers index, their capacity and their corresponding preferences ---- 1 2 (3:1) 7
-                for k in range(1, self.lecturers + 1):
-                    lecturer = "l" + str(k)
-                    capacity = self.lp[lecturer][0]
-                    I.write(str(k) + " " + str(capacity) + " ")
-                    preference_with_ties = self.lp[lecturer][-1]
-                    for tie in preference_with_ties:
-                        if len(tie) == 1:
-                            I.write(str(tie[0][1:]) + " ")
-                        else:
-                            I.write("(")
-                            # print(preference)
-                            # print(tie)
-                            sliced = [i[1:] for i in tie]
-                            # print(sliced)
-                            for j in range(len(sliced) - 1):
-                                I.write(str(sliced[j]) + ":")
-                            I.write(str(sliced[-1]) + ")" + " ")
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                I.close()
+            # ---------------------------------------------------------------------------------------------------------------------------------------
+            # .. write the lecturers index, their capacity and their corresponding preferences ---- 1 2 (3:1) 7
+            for k in range(1, self.lecturers + 1):
+                lecturer = "l" + str(k)
+                capacity = self.lp[lecturer][0]
+                I.write(str(k) + " " + str(capacity) + " ")
+                preference_with_ties = self.lp[lecturer][-1]
+                for tie in preference_with_ties:
+                    if len(tie) == 1:
+                        I.write(str(tie[0][1:]) + " ")
+                    else:
+                        I.write("(")
+                        # print(preference)
+                        # print(tie)
+                        sliced = [i[1:] for i in tie]
+                        # print(sliced)
+                        for j in range(len(sliced) - 1):
+                            I.write(str(sliced[j]) + ":")
+                        I.write(str(sliced[-1]) + ")" + " ")
+                I.write("\n")
+            # ---------------------------------------------------------------------------------------------------------------------------------------
+            I.close()

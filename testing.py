@@ -49,10 +49,7 @@ def all_tests():
         for filename in files:
             if filename.endswith(".txt"):
                 filepath = subdir + os.sep + filename
-                if test(filepath):
-                    print(f"\t{filename}:\tpass\t")
-                else:
-                    print(f"\t{filename}:\t\tfail")
+                single_test(filepath)
 
 
 def single_test(filepath):
@@ -62,5 +59,6 @@ def single_test(filepath):
         print(f"{filepath}:\t\tfail")
 
 
-all_tests()
+# all_tests()
 # single_test("examples/K instances/K33.txt")
+single_test("examples/sofiat/ex8.txt")

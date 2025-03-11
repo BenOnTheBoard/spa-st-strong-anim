@@ -1,6 +1,8 @@
 import math
 import numpy as np
+import os
 import random
+import shutil
 
 
 class SPASTInstanceGenerator:
@@ -207,3 +209,36 @@ class SPASTInstanceGenerator:
                     )
                     + "\n"
                 )
+
+
+def alpha26(x):
+    if x == 0:
+        return "a"
+    text = ""
+    y = x
+    while y != 0:
+        z = y % 26
+        text += chr(97 + z)
+        y = int((y - z) / 26)
+    return text
+
+
+if __name__ == "__main__":
+    directory = "examples/gen"
+
+    if os.path.isdir(directory):
+        shutil.rmtree(directory)
+    os.mkdir(directory)
+
+    ig = SPASTInstanceGenerator(
+        num_students=8,
+        lower_bound=0,
+        upper_bound=10,
+        num_projects=16,
+        num_lecturers=6,
+    )
+
+    for k in range(5):
+        filepath = f"{directory}/{alpha26(k)}.txt"
+        ig.generate_instance()
+        ig.write_instance_to_file(filepath)

@@ -446,21 +446,18 @@ class SPAST_STRONG:
             if self.build_Gr:
                 self.update_revised_quota()
                 self.max_flow = self.buildGr()
+                self.Mr_prefigure_flow = deepcopy(self.max_flow)
 
                 ### student ###
                 Us = self.unhappy_students()
                 self.Zs = self.criticalset_students(Us)
                 self.Zs_deletions()
 
-                if not self.Zs:
+                if not Us:
                     ### project ###
                     Up, typeII_Us = self.unhappy_projects()
                     self.Zp = self.criticalset_projects(Up)
                     self.Zp_deletions()
-
-                    if not self.Zp:
-                        self.usable_Mr = True
-                        self.Mr_prefigure_flow = deepcopy(self.max_flow)
 
     def most_preferred_reject(self, project):
         rejects = self.G[project]["rejected"]
@@ -573,7 +570,17 @@ class SPAST_STRONG:
         Gf = nx.DiGraph()
         for si in self.sp:
             Gf.add_edge("s", si, capacity=1)
-            if self.G[si]["bound"]:
+            si_prefig = self.get_prefigure_project(si)
+
+            found_prefig = False
+            for tie in self.sp[si]["list"]:
+                if si_prefig in tie:
+                    found_prefig = True
+
+            if found_prefig:
+                Gf.add_edge(si, si_prefig, capacity=1)
+
+            elif self.G[si]["bound"]:
                 for pj in self.G[si]["bound"]:
                     Gf.add_edge(si, pj, capacity=1)
 
@@ -595,6 +602,13 @@ class SPAST_STRONG:
             for p, flow in feasible_max_flow[s].items():
                 if flow == 1:
                     self.M[s] = p
+
+    def get_prefigure_project(self, student):
+        if student in self.Mr_prefigure_flow:
+            for k, v in self.Mr_prefigure_flow[student].items():
+                if v == 1:
+                    return k
+        return None
 
     def run(self):
         while self.unassigned_and_non_empty_list:

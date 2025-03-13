@@ -12,7 +12,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.ss_edges = []
 
         ### plotting ###
-        self.figure, self.axes = plt.subplots(1, 2)
+        self.figure, self.axes = plt.subplots(1, 3)
         self.dist = max(self.num_students, self.num_projects, self.num_lecturers)
         self.spacing = {
             "s": self.dist / (1 + self.num_students),
@@ -31,7 +31,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             "node_color": "none",
             "node_size": 600,
             "bbox": {
-                "facecolor": (0.76, 0.69, 0.88),
+                "facecolor": "#c2b0e0",
                 "edgecolor": "black",
                 "boxstyle": "round,pad=0.1",
             },
@@ -50,6 +50,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             if self.build_Gr:
                 self.update_revised_quota()
                 self.max_flow = self.buildGr()
+                self.draw_matching_only()
 
                 ### student ###
                 Us = self.unhappy_students()
@@ -73,6 +74,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
     def draw_graph_plot(self, G, labels, pos, ax):
         self.axes[0].set_title("G, the provisional assignment graph.")
         self.axes[1].set_title("G_r, the reduced assignment graph.")
+        self.axes[2].set_title("Maximum/feasible matching.")
 
         edge_color_list = []
         for e in G.edges:
@@ -129,7 +131,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.axes[0].clear()
         self.draw_graph_plot(graph, labels, pos, self.axes[0])
 
-    def max_flow_as_graph(self):
+    def max_flow_to_reduced_graph(self):
         flow_G = nx.DiGraph()
 
         for student in self.max_flow["s"].keys():
@@ -141,7 +143,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return flow_G
 
     def draw_SPA_reduced(self):
-        G_display = self.max_flow_as_graph()
+        G_display = self.max_flow_to_reduced_graph()
 
         pos = dict()
         labels = dict()
@@ -159,6 +161,35 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
+    def max_flow_as_graph(self):
+        flow_G = nx.DiGraph()
+
+        for student in self.max_flow["s"].keys():
+            for project, flow_val in self.max_flow[student].items():
+                if flow_val == 1:
+                    flow_G.add_edge(student, project)
+
+        return flow_G
+
+    def draw_matching_only(self):
+        G_matching = self.max_flow_as_graph()
+
+        pos = dict()
+        labels = dict()
+
+        for x in G_matching.nodes():
+            letter = x[0]
+            number = int(x[1:])
+            pos[x] = (self.column[letter], number * self.spacing[letter])
+
+            if letter in ("p", "l"):
+                labels[x] = f"{x} : {self.G[x]['revised_quota']}"
+            else:
+                labels[x] = x
+
+        self.axes[2].clear()
+        self.draw_graph_plot(G_matching, labels, pos, self.axes[2])
+
     def find_ss_edges_dict(self):
         bruteforcer = STSMBruteForce(filename)
         bruteforcer.choose()
@@ -167,7 +198,9 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.ss_edges.clear()
         for matching in ssm_list:
             for k, v in matching.items():
+                print(f"{k} : {v}")
                 self.ss_edges.append((k, v))
+            print("---" * 4)
 
     def run(self):
         self.find_ss_edges_dict()
@@ -181,6 +214,8 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
 
         self.update_bound_unbound()
         self.get_feasible_matching()
+        self.figure.suptitle("End-state.")
+        self.draw_matching_only()
         plt.pause(self.END_WAIT)
 
         return self.M

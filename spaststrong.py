@@ -339,6 +339,7 @@ class SPAST_STRONG:
                         and self.plc[p]["lec"] == lk
                         and p not in explored_projects
                     ):
+                        print(project, p, s)
                         unexplored_projects.add(p)
 
         return explored_projects
@@ -591,13 +592,13 @@ class SPAST_STRONG:
                 Gf.add_edge(pj, lk, capacity=self.plc[pj]["cap"])
             Gf.add_edge(lk, "t", capacity=self.lp[lk]["cap"])
 
-        feasible_max_flow = nx.max_flow_min_cost(Gf, "s", "t")
-        self.max_flow_to_feasible_matching(feasible_max_flow)
+        self.max_flow = nx.max_flow_min_cost(Gf, "s", "t")
+        self.max_flow_to_feasible_matching()
 
-    def max_flow_to_feasible_matching(self, feasible_max_flow):
+    def max_flow_to_feasible_matching(self):
         self.M = {s: "" for s in self.sp}
         for s in self.sp:
-            for p, flow in feasible_max_flow[s].items():
+            for p, flow in self.max_flow[s].items():
                 if flow == 1:
                     self.M[s] = p
 

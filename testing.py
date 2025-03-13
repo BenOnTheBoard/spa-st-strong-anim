@@ -2,7 +2,6 @@ import os
 
 from bruteforce import STSMBruteForce
 from spaststrong import SPAST_STRONG
-from SPAST_Strong_Anim import SPAST_STRONG_ANIM
 
 
 def pprint_G(G):
@@ -72,8 +71,4 @@ def single_test(filepath, verbose=True):
 
 # all_tests()
 # single_test("examples/misc/5_5_30.txt")
-
-# cache abuse trick
-f = "examples/misc/5530simple.txt"
-if not single_test(f, verbose=False):
-    SPAST_STRONG_ANIM(f)
+single_test("examples/misc/5530simple.txt", verbose=False)

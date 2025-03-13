@@ -19,7 +19,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.column = {"s": 1, "p": 2, "l": 3}
 
         ### plot control panel ###
-        self.WAIT_PER_DRAW = 20
+        self.WAIT_PER_DRAW = 3
         self.END_WAIT = 40
         self.style_info = {
             "with_labels": True,
@@ -61,7 +61,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
                     self.Zp = self.criticalset_projects(Up)
                     self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
                     self.draw_SPA_reduced()
-                    self.Zp_deletions()
+                    self.Zp_deletions(typeII_Us)
                     self.draw_SPA_graph()
 
                 self.axes[1].clear()

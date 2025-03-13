@@ -2,6 +2,7 @@ import os
 
 from bruteforce import STSMBruteForce
 from spaststrong import SPAST_STRONG
+from SPAST_Strong_Anim import SPAST_STRONG_ANIM
 
 
 def pprint_G(G):
@@ -54,7 +55,7 @@ def all_tests(verbose=False):
                 seen += 1
                 if test(filepath, verbose=verbose):
                     wins += 1
-                    print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
+                    # print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
                 else:
                     print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
                 if verbose:
@@ -64,10 +65,15 @@ def all_tests(verbose=False):
 def single_test(filepath, verbose=True):
     if test(filepath, verbose=verbose):
         print(f"{filepath}:\tpass\t")
+        return True
     else:
         print(f"{filepath}:\t\tfail")
+        return False
 
+# all_tests()
+# single_test("examples/misc/5_5_30.txt")
 
-all_tests()
-# single_test("examples/K instances/K33.txt")
-# single_test("examples/sofiat/ex4.txt")
+# cache abuse trick
+f = "examples/misc/5530simple.txt"
+if not single_test(f, verbose=False):
+    SPAST_STRONG_ANIM(f)

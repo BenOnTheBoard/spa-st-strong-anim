@@ -25,7 +25,6 @@ def test(filename, verbose=False):
     if verbose:
         break_line()
         print("Bruteforced results:")
-        bf_ssm_list = bruteforcer.get_ssm_list()
         if bf_ssm_list:
             for matching in bf_ssm_list:
                 print(matching)
@@ -69,6 +68,7 @@ def single_test(filepath, verbose=True):
     else:
         print(f"{filepath}:\t\tfail")
         return False
+
 
 # all_tests()
 # single_test("examples/misc/5_5_30.txt")

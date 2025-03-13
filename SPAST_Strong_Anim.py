@@ -1,12 +1,15 @@
 import matplotlib.pyplot as plt
 import networkx as nx
 
+from bruteforce import STSMBruteForce
 from spaststrong import SPAST_STRONG
 
 
 class SPAST_STRONG_ANIM(SPAST_STRONG):
     def __init__(self, filename):
         super().__init__(filename)
+
+        self.ss_edges = []
 
         ### plotting ###
         self.figure, self.axes = plt.subplots(1, 2)
@@ -22,6 +25,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.WAIT_PER_DRAW = 3
         self.END_WAIT = 40
         self.style_info = {
+            "stable_edge_colour": "#2efd33",
             "with_labels": True,
             "node_shape": "s",
             "node_color": "none",
@@ -55,7 +59,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
                 self.Zs_deletions()
                 self.draw_SPA_graph()
 
-                if not self.Zs:
+                if not Us:
                     ### project ###
                     Up, typeII_Us = self.unhappy_projects()
                     self.Zp = self.criticalset_projects(Up)
@@ -70,9 +74,17 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.axes[0].set_title("G, the provisional assignment graph.")
         self.axes[1].set_title("G_r, the reduced assignment graph.")
 
+        edge_color_list = []
+        for e in G.edges:
+            if e in self.ss_edges:
+                edge_color_list.append(self.style_info["stable_edge_colour"])
+            else:
+                edge_color_list.append("#000000")
+
         nx.draw(
             G,
             pos,
+            edge_color=edge_color_list,
             with_labels=self.style_info["with_labels"],
             labels=labels,
             node_shape=self.style_info["node_shape"],
@@ -88,16 +100,16 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         plt.pause(self.WAIT_PER_DRAW)
 
     def draw_SPA_graph(self):
-        G = nx.DiGraph()
-        G.add_nodes_from(self.G.keys())
+        graph = nx.DiGraph()
+        graph.add_nodes_from(self.G.keys())
 
         for k in self.G.keys():
             if k[0] == "s":
                 for pj in self.G[k]["projects"]:
-                    G.add_edge(k, pj)
+                    graph.add_edge(k, pj)
             elif k[0] == "l":
                 for pj in self.G[k]["projects"]:
-                    G.add_edge(pj, k)
+                    graph.add_edge(pj, k)
 
         pos = dict()
         labels = dict()
@@ -115,7 +127,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
                 labels[x] = x
 
         self.axes[0].clear()
-        self.draw_graph_plot(G, labels, pos, self.axes[0])
+        self.draw_graph_plot(graph, labels, pos, self.axes[0])
 
     def max_flow_as_graph(self):
         flow_G = nx.DiGraph()
@@ -147,7 +159,19 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
 
+    def find_ss_edges_dict(self):
+        bruteforcer = STSMBruteForce(filename)
+        bruteforcer.choose()
+        ssm_list = bruteforcer.get_ssm_list()
+
+        self.ss_edges.clear()
+        for matching in ssm_list:
+            for k, v in matching.items():
+                self.ss_edges.append((k, v))
+
     def run(self):
+        self.find_ss_edges_dict()
+
         while self.unassigned_and_non_empty_list:
             self.inner_repeat()  # lines 2 - 26
             self.repletion_deletions()  # lines 27 - 34

@@ -339,7 +339,6 @@ class SPAST_STRONG:
                         and self.plc[p]["lec"] == lk
                         and p not in explored_projects
                     ):
-                        print(project, p, s)
                         unexplored_projects.add(p)
 
         return explored_projects

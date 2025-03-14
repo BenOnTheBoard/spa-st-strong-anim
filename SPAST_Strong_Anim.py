@@ -221,7 +221,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "examples/misc/5530simple.txt"
+filename = "examples/small_breakers/86_breaker.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

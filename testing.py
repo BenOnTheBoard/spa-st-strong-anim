@@ -53,7 +53,7 @@ def all_tests(verbose=False):
                 seen += 1
                 if test(filepath, verbose=verbose):
                     wins += 1
-                    # print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
+                    print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
                 else:
                     print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
                 if verbose:
@@ -69,6 +69,6 @@ def single_test(filepath, verbose=True):
         return False
 
 
-# all_tests()
+all_tests()
 # single_test("examples/misc/5_5_30.txt")
-single_test("examples/misc/5530simple.txt", verbose=False)
+# single_test("examples/misc/5530simple.txt", verbose=False)

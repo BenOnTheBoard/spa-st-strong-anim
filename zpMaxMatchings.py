@@ -87,9 +87,12 @@ class ZPMaxMatchings:
                 self.labels[x] = x
 
     def draw_graph_plot(self, match_edges, ax):
+        projects_with_matches = set([pair[1] for pair in match_edges])
         edge_color_list = []
         for e in self.graph.edges:
             if e in match_edges:
+                edge_color_list.append(self.style_info["matched_edge_colour"])
+            elif e[0] in projects_with_matches:
                 edge_color_list.append(self.style_info["matched_edge_colour"])
             else:
                 edge_color_list.append("#000000")
@@ -145,7 +148,7 @@ class ZPMaxMatchings:
         ]
 
         for row_contents in matching_rows:
-            figure, axes = plt.subplots(1, row_length)
+            _, axes = plt.subplots(1, row_length)
 
             for i, matching in enumerate(row_contents):
                 self.draw_graph_plot(matching, axes[i])

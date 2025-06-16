@@ -51,13 +51,16 @@ def all_tests(verbose=False):
             if filename.endswith(".txt"):
                 filepath = subdir + os.sep + filename
                 seen += 1
-                if test(filepath, verbose=verbose):
+                if test(filepath):
                     wins += 1
-                    print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
+                    if verbose:
+                        print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
                 else:
                     print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
-                if verbose:
-                    print("\n\n")
+        if verbose:
+            print("\n\n")
+
+    print(f"Final score:\t{wins}/{seen},\t{100 * (wins / seen):.2f}")
 
 
 def single_test(filepath, verbose=True):
@@ -69,6 +72,6 @@ def single_test(filepath, verbose=True):
         return False
 
 
-all_tests()
+all_tests(verbose=True)
 # single_test("examples/misc/5_5_30.txt")
 # single_test("examples/misc/5530simple.txt", verbose=False)

@@ -27,23 +27,25 @@ density_levels = np.arange(0, 1 + step_size / 2, step_size)
 density_pairs = list(product(density_levels, density_levels))
 
 for densities in tqdm(density_pairs):
-    students = random.randint(1, 4)
-    projects = random.randint(1, students)
-    lecturers = random.randint(1, projects)
-
     for k in range(FILES_PER_DENSITY_PAIR):
+        students = random.randint(1, 12)
+        projects = random.randint(1, students)
+        lecturers = random.randint(1, projects)
+
+        S = SPASTIG(
+            students=students,
+            projects=projects,
+            lecturers=lecturers,
+            pref_list_length_lb=projects,
+            pref_list_length_ub=projects,
+            student_tie_density=densities[0],
+            lecturer_tie_density=densities[1],
+        )
+
+        filename = f"{DIRECTORY}{int(densities[0] * DENSITY_STEPS)}_{int(densities[1] * DENSITY_STEPS)}_{k}.txt"
+
         instance_ssm_list = []
         while not instance_ssm_list:
-            S = SPASTIG(
-                students=students,
-                projects=projects,
-                lecturers=lecturers,
-                pref_list_length_lb=0,
-                pref_list_length_ub=projects,
-                student_tie_density=densities[0],
-                lecturer_tie_density=densities[1],
-            )
-            filename = f"{DIRECTORY}{int(densities[0] * DENSITY_STEPS)}_{int(densities[1] * DENSITY_STEPS)}_{k}.txt"
             S.write_instance_with_ties(filename)
 
             bruteforcer = STSMBruteForce(filename)

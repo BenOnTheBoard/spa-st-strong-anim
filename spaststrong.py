@@ -515,7 +515,7 @@ class SPAST_STRONG:
 
         for pn in neighbourhood:
             pn_rank = student_ranking[pn][0]
-            if pn_rank < project_rank:
+            if pn_rank > project_rank:
                 strict_preference = True
             elif pn_rank == project_rank:
                 indifference = True

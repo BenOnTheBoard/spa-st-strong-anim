@@ -56,7 +56,8 @@ def all_tests(verbose=False):
                     if verbose:
                         print(f"\t{filename}:\tpass\t\t{wins}/{seen}")
                 else:
-                    print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
+                    if verbose:
+                        print(f"\t{filename}:\t\tfail\t{wins}/{seen}")
         if verbose:
             print("\n\n")
 

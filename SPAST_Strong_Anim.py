@@ -60,15 +60,6 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
                 self.Zs_deletions()
                 self.draw_SPA_graph()
 
-                if not Us:
-                    ### project ###
-                    Up, typeII_Us = self.unhappy_projects()
-                    self.Zp = self.criticalset_projects(Up)
-                    self.figure.suptitle(f"Critical Projects Stage, Z_p = {self.Zp}.")
-                    self.draw_SPA_reduced()
-                    self.Zp_deletions(typeII_Us)
-                    self.draw_SPA_graph()
-
                 self.axes[1].clear()
 
     def draw_graph_plot(self, G, labels, pos, ax):
@@ -221,7 +212,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "examples/misc/5530simple.txt"
+filename = "test_0.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

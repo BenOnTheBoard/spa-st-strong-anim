@@ -451,12 +451,6 @@ class SPAST_STRONG:
                 self.Zs = self.criticalset_students(Us)
                 self.Zs_deletions()
 
-                if not Us:
-                    ### project ###
-                    Up, typeII_Us = self.unhappy_projects()
-                    self.Zp = self.criticalset_projects(Up)
-                    self.Zp_deletions(typeII_Us)
-
     def most_preferred_reject(self, project):
         rejects = self.G[project]["rejected"]
 
@@ -568,17 +562,8 @@ class SPAST_STRONG:
         Gf = nx.DiGraph()
         for si in self.sp:
             Gf.add_edge("s", si, capacity=1)
-            si_prefig = self.get_prefigure_project(si)
 
-            found_prefig = False
-            for tie in self.sp[si]["list"]:
-                if si_prefig in tie:
-                    found_prefig = True
-
-            if found_prefig:
-                Gf.add_edge(si, si_prefig, capacity=1)
-
-            elif self.G[si]["bound"]:
+            if self.G[si]["bound"]:
                 for pj in self.G[si]["bound"]:
                     Gf.add_edge(si, pj, capacity=1)
 

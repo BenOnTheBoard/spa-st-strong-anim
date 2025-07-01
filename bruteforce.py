@@ -73,9 +73,6 @@ class STSMBruteForce:
 
     def blockingpair_2bii(self, student, project, lecturer):
         if self.plc[project][1] > 0 and self.lp[lecturer][0] == 0:
-            proj_in_M = self.M[student]
-            if proj_in_M != "" and self.plc[proj_in_M][0] == lecturer:
-                return True
             lec_worst_pointer = self.lecturer_wstcounter[lecturer][0]
             student_rank_Lk = self.lp_rank[lecturer][student]
             if student_rank_Lk < lec_worst_pointer:

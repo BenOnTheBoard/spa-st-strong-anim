@@ -7,13 +7,15 @@ import numpy as np
 from tqdm import tqdm
 
 from instanceGenerator import SPASTIG
-from bruteforce import STSMBruteForce
 
 ######
 # Panel:
 DENSITY_STEPS = 6
-FILES_PER_DENSITY_PAIR = 1000
+FILES_PER_DENSITY_PAIR = 5000
 DIRECTORY = "examples/gen/"
+
+MAX_STUDENTS = 5
+MAX_PROJECTS = 6
 ######
 
 print("Directory cleanup...")
@@ -28,9 +30,9 @@ density_pairs = list(product(density_levels, density_levels))
 
 for densities in tqdm(density_pairs):
     for k in range(FILES_PER_DENSITY_PAIR):
-        students = random.randint(1, 12)
-        projects = random.randint(1, students)
-        lecturers = random.randint(1, projects)
+        students = random.randint(2, MAX_STUDENTS)
+        projects = random.randint(2, MAX_PROJECTS)
+        lecturers = random.randint(2, projects)
 
         S = SPASTIG(
             students=students,
@@ -43,11 +45,4 @@ for densities in tqdm(density_pairs):
         )
 
         filename = f"{DIRECTORY}{int(densities[0] * DENSITY_STEPS)}_{int(densities[1] * DENSITY_STEPS)}_{k}.txt"
-
-        instance_ssm_list = []
-        while not instance_ssm_list:
-            S.write_instance_with_ties(filename)
-
-            bruteforcer = STSMBruteForce(filename)
-            bruteforcer.choose()
-            instance_ssm_list = bruteforcer.get_ssm_list()
+        S.write_instance_with_ties(filename)

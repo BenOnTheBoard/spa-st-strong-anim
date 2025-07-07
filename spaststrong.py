@@ -499,7 +499,7 @@ class SPAST_STRONG:
     def project_neighbourhood_comparison(self, student, project, neighbourhood):
         """
         1 - student prefers project to something in neighbourhood
-        0 - student prefers project to something in neighbourhood
+        0 - student is indifferent between project and something in neighbourhood
         -1 - neither
         """
         student_ranking = self.sp[student]["list_rank"]

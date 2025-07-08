@@ -212,7 +212,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "test_0.txt"
+filename = "examples/small_breakers/no_del_2bii.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

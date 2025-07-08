@@ -73,6 +73,6 @@ def single_test(filepath, verbose=True):
         return False
 
 
-all_tests(verbose=True)
-# single_test("examples/misc/5_5_30.txt")
+# all_tests(verbose=True)
+single_test("examples/small_breakers/no_del_2bii.txt")
 # single_test("examples/misc/5530simple.txt", verbose=False)

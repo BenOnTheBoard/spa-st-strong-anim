@@ -46,3 +46,29 @@ def generator_to_dicts(S):
         pj_details["tail_idx"] = pj_details["list_len"] - 1
 
     return new_sp, new_sp_no_tie_deletions, new_plc, new_lp
+
+
+def generator_to_other_bruteforce_args(S):
+    new_sp_no_tie = {si: lists[0].copy() for si, lists in S.sp.items()}
+
+    new_lp_rank = {lk: dict() for lk in S.lp}
+    for lk, lk_ranking in new_lp_rank.items():
+        lk_list = S.lp[lk][-1]
+        for tie_idx, tie in enumerate(lk_list):
+            for si in tie:
+                lk_ranking[si] = tie_idx + 1
+
+    new_proj_rank = {pj: dict() for pj in S.plc}
+    for pj, pj_ranking in new_proj_rank.items():
+        lk = S.plc[pj][1]
+        accessible_students = S.plc[pj][2]
+
+        for si, si_rank in new_lp_rank[lk].items():
+            if si in accessible_students:
+                pj_ranking[si] = si_rank
+
+        min_rank = min(pj_ranking.values())
+        for si, si_rank in pj_ranking.items():
+            pj_ranking[si] = si_rank + 1 - min_rank
+
+    return new_sp_no_tie, new_lp_rank, new_proj_rank

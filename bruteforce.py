@@ -10,7 +10,7 @@ from copy import deepcopy
 
 from readinputSPAST import READSPAST
 
-from genReader import generator_to_dicts, generator_to_other_bruteforce_args
+from genReader import generator_to_bruteforcer_dicts
 
 
 class STSMBruteForce:
@@ -31,19 +31,23 @@ class STSMBruteForce:
             self.proj_rank = r.proj_rank
 
         elif generator is not None:
-            self.sp, self.sp_no_tie_deletions, self.plc, self.lp = generator_to_dicts(
-                generator
-            )
-            self.sp_no_tie, self.lp_rank, self.proj_rank = (
-                generator_to_other_bruteforce_args(generator)
-            )
+            self.filename = None
+            (
+                self.sp,
+                self.sp_no_tie,
+                self.sp_no_tie_deletions,
+                self.plc,
+                self.lp,
+                self.lp_rank,
+                self.proj_rank,
+            ) = generator_to_bruteforcer_dicts(generator)
 
         else:
             raise ValueError("Neither initialisation method supplied.")
 
-        self.num_students = len(self.sp)
-        self.num_projects = len(self.plc)
-        self.num_lecturers = len(self.lp)
+        self.students = len(self.sp)
+        self.projects = len(self.plc)
+        self.lecturers = len(self.lp)
 
         self.sp_copy = deepcopy(self.sp)
         self.lp_copy = deepcopy(self.lp)

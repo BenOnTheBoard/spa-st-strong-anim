@@ -48,7 +48,31 @@ def generator_to_dicts(S):
     return new_sp, new_sp_no_tie_deletions, new_plc, new_lp
 
 
-def generator_to_other_bruteforce_args(S):
+def generator_to_bruteforcer_dicts(S):
+    dict_sp, new_sp_no_tie_deletions, dict_plc, dict_lp = generator_to_dicts(S)
+
+    new_sp = {
+        si: [info["list_len"], info["list"], info["list_rank"], info["head_idx"]]
+        for si, info in dict_sp.items()
+    }
+
+    new_plc = {
+        pj: [info["lec"], info["cap"], False, [], info["list_len"], info["tail_idx"]]
+        for pj, info in dict_plc.items()
+    }
+
+    new_lp = {
+        lk: [
+            info["cap"],
+            info["list"],
+            False,
+            dict(),
+            info["list_len"],
+            info["tail_idx"],
+        ]
+        for lk, info in dict_lp.items()
+    }
+
     new_sp_no_tie = {si: lists[0].copy() for si, lists in S.sp.items()}
 
     new_lp_rank = {lk: dict() for lk in S.lp}
@@ -67,8 +91,17 @@ def generator_to_other_bruteforce_args(S):
             if si in accessible_students:
                 pj_ranking[si] = si_rank
 
-        min_rank = min(pj_ranking.values())
-        for si, si_rank in pj_ranking.items():
-            pj_ranking[si] = si_rank + 1 - min_rank
+        if pj_ranking.values():
+            min_rank = min(pj_ranking.values())
+            for si, si_rank in pj_ranking.items():
+                pj_ranking[si] = si_rank + 1 - min_rank
 
-    return new_sp_no_tie, new_lp_rank, new_proj_rank
+    return (
+        new_sp,
+        new_sp_no_tie,
+        new_sp_no_tie_deletions,
+        new_plc,
+        new_lp,
+        new_lp_rank,
+        new_proj_rank,
+    )

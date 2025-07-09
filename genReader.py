@@ -1,4 +1,8 @@
-def generator_to_dicts(S):
+from copy import deepcopy
+
+
+def generator_to_dicts(gen):
+    S = deepcopy(gen)
     new_sp = {si: {"list": lists[1]} for si, lists in S.sp.items()}
     for si, si_info in new_sp.items():
         si_info["list_rank"] = dict()
@@ -48,7 +52,8 @@ def generator_to_dicts(S):
     return new_sp, new_sp_no_tie_deletions, new_plc, new_lp
 
 
-def generator_to_bruteforcer_dicts(S):
+def generator_to_bruteforcer_dicts(gen):
+    S = deepcopy(gen)
     dict_sp, new_sp_no_tie_deletions, dict_plc, dict_lp = generator_to_dicts(S)
 
     new_sp = {

@@ -41,7 +41,7 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
             S.instance_generator_with_ties()
             S.write_instance_with_ties(filename)
 
-            bruteforcer = STSMBruteForce(filename)
+            bruteforcer = STSMBruteForce(filename=filename)
             bruteforcer.choose()
             instance_ssm_list = bruteforcer.get_ssm_list()
 

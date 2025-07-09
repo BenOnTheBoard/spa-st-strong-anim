@@ -182,7 +182,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.draw_graph_plot(G_matching, labels, pos, self.axes[2])
 
     def find_ss_edges_dict(self):
-        bruteforcer = STSMBruteForce(filename)
+        bruteforcer = STSMBruteForce(filename=filename)
         bruteforcer.choose()
         ssm_list = bruteforcer.get_ssm_list()
 

@@ -14,7 +14,7 @@ def break_line():
 
 
 def test(filename, verbose=False):
-    bruteforcer = STSMBruteForce(filename)
+    bruteforcer = STSMBruteForce(filename=filename)
     bruteforcer.choose()
     bf_ssm_list = bruteforcer.get_ssm_list()
 

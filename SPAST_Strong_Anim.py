@@ -7,7 +7,7 @@ from spaststrong import SPAST_STRONG
 
 class SPAST_STRONG_ANIM(SPAST_STRONG):
     def __init__(self, filename):
-        super().__init__(filename)
+        super().__init__(filename=filename)
 
         self.ss_edges = []
 
@@ -23,7 +23,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
 
         ### plot control panel ###
         self.WAIT_PER_DRAW = 3
-        self.END_WAIT = 40
+        self.END_WAIT = 400
         self.style_info = {
             "stable_edge_colour": "#2efd33",
             "with_labels": True,
@@ -212,7 +212,8 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "examples/small_breakers/no_del_2bii.txt"
+# filename = "examples/small_breakers/no_del_2bii.txt"
+filename = "test_2.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

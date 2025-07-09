@@ -18,7 +18,7 @@ def test(filename, verbose=False):
     bruteforcer.choose()
     bf_ssm_list = bruteforcer.get_ssm_list()
 
-    strong_solver = SPAST_STRONG(filename)
+    strong_solver = SPAST_STRONG(filename=filename)
     solver_matching = strong_solver.run()
 
     if verbose:

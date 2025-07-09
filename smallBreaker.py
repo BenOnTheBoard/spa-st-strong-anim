@@ -46,7 +46,7 @@ for k in tqdm(range(MAX_TRIALS)):
         bruteforcer.choose()
         instance_ssm_list = bruteforcer.get_ssm_list()
 
-    strong_solver = SPAST_STRONG(filename)
+    strong_solver = SPAST_STRONG(filename=filename)
     matching = strong_solver.run()
 
     if matching not in instance_ssm_list:

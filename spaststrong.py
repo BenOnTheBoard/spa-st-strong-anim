@@ -6,20 +6,28 @@ from readFile import SPASTFileReader
 
 
 class SPAST_STRONG:
-    def __init__(self, filename):
-        self.filename = filename
+    def __init__(self, filename=None, dictionaries=None):
+        if filename is not None:
+            self.filename = filename
 
-        r = SPASTFileReader(self.filename)
-        r.read_file()
+            r = SPASTFileReader(self.filename)
+            r.read_file()
 
-        self.num_students = r.students
-        self.num_projects = r.projects
-        self.num_lecturers = r.lecturers
+            self.num_students = r.students
+            self.num_projects = r.projects
+            self.num_lecturers = r.lecturers
 
-        self.sp = r.sp
-        self.sp_no_tie_deletions = r.sp_no_tie_deletions
-        self.plc = r.plc
-        self.lp = r.lp
+            self.sp = r.sp
+            self.sp_no_tie_deletions = r.sp_no_tie_deletions
+            self.plc = r.plc
+            self.lp = r.lp
+        elif dictionaries is not None:
+            self.sp, self.sp_no_tie_deletions, self.plc, self.lp = dictionaries
+            self.num_students = len(self.sp)
+            self.num_projects = len(self.plc)
+            self.num_lecturers = len(self.lp)
+        else:
+            raise ValueError("Neither initialisation method supplied.")
 
         self.og_sp = deepcopy(self.sp)
         self.og_plc = deepcopy(self.plc)

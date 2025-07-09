@@ -45,4 +45,5 @@ for densities in tqdm(density_pairs):
         )
 
         filename = f"{DIRECTORY}{int(densities[0] * DENSITY_STEPS)}_{int(densities[1] * DENSITY_STEPS)}_{k}.txt"
+        S.instance_generator_with_ties()
         S.write_instance_with_ties(filename)

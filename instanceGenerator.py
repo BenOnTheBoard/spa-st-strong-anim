@@ -151,6 +151,7 @@ class SPASTIG:
         # -----------------------------------------------------------------------------------------------------------------------------------------
 
     def instance_generator_with_ties(self):
+        self.instance_generator_no_ties()
         # -----------------------------------------------------------------------------------------------------------------------------------------
         # ------------------------------------------- ========= TIES IN STUDENTS LIST ========= --------------------------------------------------
         # -----------------------------------------------------------------------------------------------------------------------------------------
@@ -188,62 +189,7 @@ class SPASTIG:
                 preference_with_ties = []
             self.lp[lecturer].append(preference_with_ties)
 
-    def write_instance_no_ties(
-        self, filename
-    ):  # writes the SPA-S instance to a txt file
-        if __name__ == "__main__":
-            self.instance_generator_no_ties()
-
-            with open(filename, "w") as I:
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                #  ...write number of student (n) number of projects (m) number of lecturers (k) ---- for convenience, they are all separated by space
-                I.write(
-                    str(self.students)
-                    + " "
-                    + str(self.projects)
-                    + " "
-                    + str(self.lecturers)
-                    + "\n"
-                )
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                # .. write the students index and their corresponding preferences ---- 1 2 3 1 7
-                for n in range(1, self.students + 1):
-                    preference = self.sp["s" + str(n)][0]
-                    sliced = [p[1:] for p in preference]
-                    I.write(str(n) + " ")
-                    I.writelines("%s " % p for p in sliced)
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                #  ..write the projects index, its capacity and the lecturer who proposed it ------- 1 5 1
-                for m in range(1, self.projects + 1):
-                    project = "p" + str(m)
-                    capacity = self.plc[project][0]
-                    lecturer = self.plc[project][1][1:]
-                    I.write(str(m) + " " + str(capacity) + " " + str(lecturer))
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                # .. write the lecturers index, their capacity and their corresponding preferences ---- 1 2 3 1 7
-                for k in range(1, self.lecturers + 1):
-                    lecturer = "l" + str(k)
-                    capacity = self.lp[lecturer][0]
-                    preference = self.lp[lecturer][2]
-                    sliced = [p[1:] for p in preference]
-                    I.write(str(k) + " " + str(capacity) + " ")
-                    I.writelines("%s " % p for p in sliced)
-                    I.write("\n")
-                # ---------------------------------------------------------------------------------------------------------------------------------------
-                I.close()
-
     def write_instance_with_ties(self, filename):
-        self.instance_generator_no_ties()
-        self.instance_generator_with_ties()
-
         with open(filename, "w") as I:
             # ---------------------------------------------------------------------------------------------------------------------------------------
             #  ...write number of student (n) number of projects (m) number of lecturers (k) ---- for convenience, they are all separated by space

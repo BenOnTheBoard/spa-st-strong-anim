@@ -38,6 +38,7 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
                 student_tie_density=densities[0],
                 lecturer_tie_density=densities[1],
             )
+            S.instance_generator_with_ties()
             S.write_instance_with_ties(filename)
 
             bruteforcer = STSMBruteForce(filename)

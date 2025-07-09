@@ -109,8 +109,6 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
             shared_counter.value += 1
             trial_num = shared_counter.value
 
-        filename = f"test_{process_id}.txt"
-
         valid = False
         while not valid:
             densities = (random.uniform(0, 1), random.uniform(0, 1))
@@ -141,6 +139,7 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
 
         if exists_ssm and solver.M not in instance_ssm_list:
             print(f"[Process {process_id}] reports an algorithm error at {trial_num}")
+            S.write_instance_with_ties("alg_error.txt")
             found_event.set()
             return
 
@@ -155,6 +154,7 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
             print(f"[Process {process_id}] got one at trial {trial_num}")
             print(f"Exists SSM: {exists_ssm}")
             print(f"Condition tuple: {conditions}")
+            S.write_instance_with_ties("lemma_error.txt")
             found_event.set()
             return
 
@@ -167,6 +167,12 @@ def test_single_file(filename):
 
     solver = SPAST_STRONG(filename=filename)
     solver.run()
+
+    if exists_ssm and solver.M not in instance_ssm_list:
+        print("Algorithm error.")
+        print(solver.M)
+        print(instance_ssm_list)
+        return
 
     lemma_s = check_condition_student(solver)
     lemma_l = check_condition_lecturer(solver)

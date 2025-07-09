@@ -10,26 +10,43 @@ from copy import deepcopy
 
 from readinputSPAST import READSPAST
 
+from genReader import generator_to_dicts, generator_to_other_bruteforce_args
+
 
 class STSMBruteForce:
-    def __init__(self, filename):
-        self.filename = filename
-        r = READSPAST(self.filename)
-        r.read_file()
+    def __init__(self, filename=None, generator=None):
+        if filename is not None:
+            self.filename = filename
 
-        self.students = r.students  # no of students
-        self.projects = r.projects  # no of projects
-        self.lecturers = r.lecturers  # no of lecturers
+            r = READSPAST(self.filename)
+            r.read_file()
 
-        self.sp = r.sp
-        self.sp_copy = r.sp_copy
-        self.sp_no_tie = r.sp_no_tie
-        self.sp_no_tie_deletions = r.sp_no_tie_deletions
-        self.plc = r.plc
-        self.lp = r.lp
-        self.lp_rank = r.lp_rank
-        self.proj_rank = r.proj_rank
-        self.lp_copy = r.lp_copy
+            self.sp = r.sp
+            self.sp_no_tie = r.sp_no_tie
+            self.sp_no_tie_deletions = r.sp_no_tie_deletions
+            self.plc = r.plc
+            self.lp = r.lp
+
+            self.lp_rank = r.lp_rank
+            self.proj_rank = r.proj_rank
+
+        elif generator is not None:
+            self.sp, self.sp_no_tie_deletions, self.plc, self.lp = generator_to_dicts(
+                generator
+            )
+            self.sp_no_tie, self.lp_rank, self.proj_rank = (
+                generator_to_other_bruteforce_args(generator)
+            )
+
+        else:
+            raise ValueError("Neither initialisation method supplied.")
+
+        self.num_students = len(self.sp)
+        self.num_projects = len(self.plc)
+        self.num_lecturers = len(self.lp)
+
+        self.sp_copy = deepcopy(self.sp)
+        self.lp_copy = deepcopy(self.lp)
 
         self.M = {s: "" for s in self.sp}
         self.project_wstcounter = {

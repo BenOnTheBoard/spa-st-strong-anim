@@ -3,10 +3,11 @@ from copy import deepcopy
 import networkx as nx
 
 from readFile import SPASTFileReader
+from genReader import generator_to_dicts
 
 
 class SPAST_STRONG:
-    def __init__(self, filename=None, dictionaries=None):
+    def __init__(self, filename=None, generator=None):
         if filename is not None:
             self.filename = filename
 
@@ -21,8 +22,10 @@ class SPAST_STRONG:
             self.sp_no_tie_deletions = r.sp_no_tie_deletions
             self.plc = r.plc
             self.lp = r.lp
-        elif dictionaries is not None:
-            self.sp, self.sp_no_tie_deletions, self.plc, self.lp = dictionaries
+        elif generator is not None:
+            self.sp, self.sp_no_tie_deletions, self.plc, self.lp = generator_to_dicts(
+                generator
+            )
             self.num_students = len(self.sp)
             self.num_projects = len(self.plc)
             self.num_lecturers = len(self.lp)

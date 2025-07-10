@@ -75,21 +75,21 @@ def list_indif(lec_list, s_prime, s):
     return False
 
 
-def capacity_validity(solver):
-    project_apps = {pj: 0 for pj in solver.plc.keys()}
-    lecturer_apps = {lk: 0 for lk in solver.lp.keys()}
-    for si_info in solver.sp.values():
-        for pj in si_info["list_rank"].keys():
+def capacity_validity(generator):
+    project_apps = {pj: 0 for pj in generator.plc.keys()}
+    lecturer_apps = {lk: 0 for lk in generator.lp.keys()}
+    for si_info in generator.sp.values():
+        for pj in si_info[0]:
             project_apps[pj] += 1
-            lk = solver.plc[pj]["lec"]
+            lk = generator.plc[pj][1]
             lecturer_apps[lk] += 1
 
     for pj, apps in project_apps.items():
-        if solver.plc[pj]["cap"] > apps:
+        if generator.plc[pj][0] > apps:
             return False
 
-    for pj, apps in project_apps.items():
-        if solver.plc[pj]["cap"] > apps:
+    for lk, apps in lecturer_apps.items():
+        if generator.lp[lk][0] > apps:
             return False
 
     return True
@@ -112,8 +112,8 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
         valid = False
         while not valid:
             densities = (random.uniform(0, 1), random.uniform(0, 1))
-            students = random.randint(1, 5)
-            projects = random.randint(1, 4)
+            students = random.randint(1, 3)
+            projects = random.randint(1, 6)
             lecturers = random.randint(1, projects)
 
             S = SPASTIG(
@@ -127,15 +127,15 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
             )
             S.instance_generator_with_ties()
 
-            solver = SPAST_STRONG(generator=S)
-            valid = capacity_validity(solver)
+            valid = capacity_validity(S)
+
+        solver = SPAST_STRONG(generator=S)
+        solver.run()
 
         bruteforcer = STSMBruteForce(generator=S)
         bruteforcer.choose()
         instance_ssm_list = bruteforcer.get_ssm_list()
         exists_ssm = bool(instance_ssm_list)
-
-        solver.run()
 
         if exists_ssm and solver.M not in instance_ssm_list:
             print(f"[Process {process_id}] reports an algorithm error at {trial_num}")

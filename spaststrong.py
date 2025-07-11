@@ -570,8 +570,6 @@ class SPAST_STRONG:
                             self.repletion_tail_wipe(lk)
 
     def delete_lesser_unbound_edges(self):
-        for k, v in self.G.items():
-            print(k, v)
         deletion_occured = True
         while deletion_occured:
             deletion_occured = False

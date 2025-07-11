@@ -203,6 +203,10 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             self.figure.suptitle("Post-repletion deletions.")
             self.draw_SPA_graph()
 
+        self.delete_lesser_unbound_edges()
+        self.figure.suptitle("Post-unbound deletions.")
+        self.draw_SPA_graph()
+
         self.update_bound_unbound()
         self.get_feasible_matching()
         self.figure.suptitle("End-state.")
@@ -212,8 +216,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-# filename = "examples/small_breakers/no_del_2bii.txt"
-filename = "test_2.txt"
+filename = "examples/small_breakers/no_del_2bii.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

@@ -112,9 +112,9 @@ def worker(shared_counter, max_trials, found_event, lock, process_id):
         valid = False
         while not valid:
             densities = (random.uniform(0, 1), random.uniform(0, 1))
-            students = random.randint(1, 3)
-            projects = random.randint(1, 6)
-            lecturers = random.randint(1, projects)
+            students = random.randint(2, 6)
+            projects = random.randint(2, 5)
+            lecturers = random.randint(2, projects)
 
             S = SPASTIG(
                 students=students,
@@ -187,13 +187,6 @@ def test_single_file(filename):
         print("Fail with:")
         print(f"\tSSM:\t{exists_ssm}")
         print(f"\tLemmas:\t{conditions}")
-
-    for s in solver.sp:
-        print(f"{s}   {solver.G[s]}")
-    for p in solver.plc:
-        print(f"{p} {solver.plc[p]['cap']} {solver.G[p]}")
-    for L in solver.lp:
-        print(f"{L} {solver.lp[L]['cap']} {solver.G[L]}")
 
 
 def main():

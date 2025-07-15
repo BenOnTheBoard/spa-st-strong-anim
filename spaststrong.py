@@ -593,7 +593,19 @@ class SPAST_STRONG:
 
             elif self.G[si]["unbound"]:
                 for pj in self.G[si]["unbound"]:
-                    Gf.add_edge(si, pj, capacity=1)
+                    lk = self.plc[pj]["lec"]
+                    for tie_idx, tie in enumerate(self.og_lp[lk]["list"]):
+                        if si in tie:
+                            si_idx = self.og_lp[lk]["list_len"] - tie_idx
+                    edge_weight = self.num_students**2 + (
+                        self.num_students - si_idx - 1
+                    )
+                    Gf.add_edge(
+                        si,
+                        pj,
+                        weight=edge_weight,
+                        capacity=1,
+                    )
 
         for lk in self.lp:
             for pj in self.G[lk]["projects"]:

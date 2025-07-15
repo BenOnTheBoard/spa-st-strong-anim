@@ -570,16 +570,17 @@ class SPAST_STRONG:
                                 self.repletion_tail_wipe(lk)
 
     def delete_lesser_unbound_edges(self):
+        self.update_bound_unbound()
         deletion_occured = True
         while deletion_occured:
             deletion_occured = False
             for si in self.sp:
-                if self.G[si]["bound"]:
+                if self.G[si]["bound"] and self.G[si]["unbound"]:
                     for pj in self.G[si]["unbound"]:
                         lk = self.plc[pj]["lec"]
                         self.delete(si, pj, lk)
-                        self.update_bound_unbound()
-                        deletion_occured = True
+                    deletion_occured = True
+                    self.update_bound_unbound()
 
     def get_feasible_matching(self):
         Gf = nx.DiGraph()

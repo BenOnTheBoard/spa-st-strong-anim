@@ -36,7 +36,7 @@ class SPAST_STRONG:
         self.og_plc = deepcopy(self.plc)
         self.og_lp = deepcopy(self.lp)
 
-        self.unassigned_and_non_empty_list = list(self.sp.keys())
+        self.unassigned_and_non_empty_list = set(self.sp.keys())
         self.G = {}
         for student in self.sp.keys():
             self.G[student] = {"projects": set(), "bound": set(), "unbound": set()}
@@ -106,10 +106,9 @@ class SPAST_STRONG:
 
         if (
             len(self.G[student]["projects"]) == 0
-            and student not in self.unassigned_and_non_empty_list
             and len(self.sp_no_tie_deletions[student]) > 0
         ):
-            self.unassigned_and_non_empty_list.append(student)
+            self.unassigned_and_non_empty_list.add(student)
 
     def p_dominated_students(self, project):
         qpj = self.pquota(project)
@@ -162,7 +161,7 @@ class SPAST_STRONG:
 
     def while_loop(self):
         while self.unassigned_and_non_empty_list:
-            student = self.unassigned_and_non_empty_list.pop(0)
+            student = self.unassigned_and_non_empty_list.pop()
             tie_at_head = self.next_tie_student_head(student)
             if tie_at_head is not None:
                 for project in tie_at_head:
@@ -203,18 +202,14 @@ class SPAST_STRONG:
                                 for pu in common_projects:
                                     self.delete(st, pu, lecturer)
 
-            if (
-                len(self.G[student]["projects"]) != 0
-                and student in self.unassigned_and_non_empty_list
-            ):
-                self.unassigned_and_non_empty_list.remove(student)
+            if len(self.G[student]["projects"]) != 0:
+                self.unassigned_and_non_empty_list.discard(student)
 
             if (
                 len(self.G[student]["projects"]) == 0
-                and student not in self.unassigned_and_non_empty_list
                 and len(self.sp_no_tie_deletions[student]) > 0
             ):
-                self.unassigned_and_non_empty_list.append(student)
+                self.unassigned_and_non_empty_list.add(student)
 
     def is_bound(self, student, project, lecturer):
         p_tail_idx = self.plc[project]["tail_idx"]

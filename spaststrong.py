@@ -59,10 +59,7 @@ class SPAST_STRONG:
 
         self.M = {}
         self.build_Gr = False
-        self.usable_Mr = False
-        self.Mr_prefigure_flow = {}
         self.max_flow = {}
-        self.Zp = set()
         self.Zs = set()
 
     def pquota(self, project):
@@ -297,80 +294,6 @@ class SPAST_STRONG:
         max_flow = nx.max_flow_min_cost(Gr, "s", "t")
         return max_flow
 
-    def unhappy_projects(self):
-        Gr_students = set(self.max_flow["s"].keys())
-        typeII_Us = set([])
-        Up = set([])
-        for student in Gr_students:
-            if self.max_flow["s"][student] == 1:
-                adjacent_projects = set(self.max_flow[student].keys())
-                assigned_project = None
-                for project in adjacent_projects:
-                    if self.max_flow[student][project] == 1:
-                        assigned_project = project
-                        break
-
-                lecturer = self.plc[assigned_project]["lec"]
-                lecturer_projects = set(self.G[lecturer]["projects"])
-                intersect = adjacent_projects.intersection(lecturer_projects)
-                intersect.remove(assigned_project)
-
-                for project in intersect:
-                    if (
-                        self.max_flow[project][lecturer]
-                        < self.G[project]["revised_quota"]
-                    ):
-                        typeII_Us.add(student)
-                        Up.add(project)
-
-        return Up, typeII_Us
-
-    def criticalset_projects(self, Up):
-        unexplored_projects = set([p for p in Up])
-        explored_projects, visited_students = set(), set()
-        while unexplored_projects:
-            project = unexplored_projects.pop()
-            lk = self.plc[project]["lec"]
-            explored_projects.add(project)
-            unmatched_svertices = set([])
-
-            for s in self.max_flow["s"]:
-                if (
-                    s not in visited_students
-                    and project in self.max_flow[s]
-                    and self.max_flow[s][project] == 0
-                ):
-                    unmatched_svertices.add(s)
-
-            for s in unmatched_svertices:
-                visited_students.add(s)
-                for p in self.max_flow[s]:
-                    if (
-                        self.max_flow[s][p] == 1
-                        and self.plc[p]["lec"] == lk
-                        and p not in explored_projects
-                    ):
-                        unexplored_projects.add(p)
-
-        return explored_projects
-
-    def Zp_deletions(self, typeII_Us):
-        for si in typeII_Us:
-            nsi_crit = []
-            for project in self.max_flow[si].keys():
-                if project in self.Zp:
-                    nsi_crit.append(project)
-
-            for px in nsi_crit:
-                px_lec = self.plc[px]["lec"]
-                for py in nsi_crit:
-                    py_lec = self.plc[py]["lec"]
-                    if px == py:
-                        continue
-                    if px_lec == py_lec:
-                        self.delete(si, px, px_lec)
-                        self.delete(si, py, py_lec)
-
     def unhappy_students(self):
         Gr_students = set(self.max_flow["s"].keys())
         Us = set(
@@ -444,18 +367,15 @@ class SPAST_STRONG:
             self.plc[project]["tail_idx"] -= 1
 
     def inner_repeat(self):
-        self.usable_Mr = False
-
-        self.Zs, self.Zp = set([None]), set([None])
-        while self.Zs.union(self.Zp):
-            self.Zs, self.Zp = set(), set()
+        self.Zs = set([None])
+        while self.Zs:
+            self.Zs = set()
             self.while_loop()
             self.update_bound_unbound()
 
             if self.build_Gr:
                 self.update_revised_quota()
                 self.max_flow = self.buildGr()
-                self.Mr_prefigure_flow = deepcopy(self.max_flow)
 
                 ### student ###
                 Us = self.unhappy_students()
@@ -622,13 +542,6 @@ class SPAST_STRONG:
                 if flow == 1:
                     self.M[s] = p
 
-    def get_prefigure_project(self, student):
-        if student in self.Mr_prefigure_flow:
-            for k, v in self.Mr_prefigure_flow[student].items():
-                if v == 1:
-                    return k
-        return None
-
     def run(self):
         while self.unassigned_and_non_empty_list:
             self.inner_repeat()  # lines 2 - 26
@@ -638,3 +551,10 @@ class SPAST_STRONG:
         self.get_feasible_matching()
 
         return self.M
+
+
+if __name__ == "__main__":
+    filename = "save.txt"
+    instance = SPAST_STRONG(filename)
+    instance.run()
+    print("Finished")

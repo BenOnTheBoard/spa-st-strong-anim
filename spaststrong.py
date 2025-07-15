@@ -553,21 +553,21 @@ class SPAST_STRONG:
         for pj, pj_info in self.plc.items():
             if self.G[pj]["replete"] and self.pquota(pj) < self.plc[pj]["cap"]:
                 lk = pj_info["lec"]
-                sr = self.most_preferred_reject(pj)
-                nsr = self.G[sr]["projects"]
+                for sr in self.G[pj]["rejected"]:
+                    nsr = self.G[sr]["projects"]
 
-                if len(nsr) == 0:
-                    if self.tail_no_better(lk, sr):
-                        self.repletion_tail_wipe(lk)
-                else:
-                    comp = self.project_neighbourhood_comparison(sr, pj, nsr)
-                    if comp == 1:
+                    if len(nsr) == 0:
                         if self.tail_no_better(lk, sr):
                             self.repletion_tail_wipe(lk)
+                    else:
+                        comp = self.project_neighbourhood_comparison(sr, pj, nsr)
+                        if comp == 1:
+                            if self.tail_no_better(lk, sr):
+                                self.repletion_tail_wipe(lk)
 
-                    if comp == 0:
-                        if self.tail_worse(lk, sr):
-                            self.repletion_tail_wipe(lk)
+                        if comp == 0:
+                            if self.tail_worse(lk, sr):
+                                self.repletion_tail_wipe(lk)
 
     def delete_lesser_unbound_edges(self):
         deletion_occured = True

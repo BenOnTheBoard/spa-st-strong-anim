@@ -168,17 +168,19 @@ class SPAST_STRONG:
                 for project in tie_at_head:
                     if project == "dp":
                         continue
-                    lecturer = self.plc[project]["lec"]
+                    project_info = self.plc[project]
+                    lecturer = project_info["lec"]
+                    lecturer_info = self.lp[lecturer]
                     self.add_edge_to_G(student, project, lecturer)
 
-                    if self.pquota(project) == self.plc[project]["cap"]:
+                    if self.pquota(project) == project_info["cap"]:
                         self.G[project]["replete"] = True
                         dominated_index, dominated_students = self.p_dominated_students(
                             project
                         )
 
                         if len(dominated_students) > 0:
-                            self.plc[project]["list"] = self.plc[project]["list"][
+                            project_info["list"] = project_info["list"][
                                 :dominated_index
                             ]
 
@@ -186,20 +188,18 @@ class SPAST_STRONG:
                             for st in tie:
                                 self.delete(st, project, lecturer)
 
-                    if self.lquota(lecturer) == self.lp[lecturer]["cap"]:
+                    if self.lquota(lecturer) == lecturer_info["cap"]:
                         self.G[lecturer]["replete"] = True
                         dominated_index, dominated_students = self.l_dominated_students(
                             lecturer
                         )
 
-                        self.lp[lecturer]["list"] = self.lp[lecturer]["list"][
-                            :dominated_index
-                        ]
-                        p_k = self.lp[lecturer]["projects"]
+                        lecturer_info["list"] = lecturer_info["list"][:dominated_index]
+                        P_k = lecturer_info["projects"]
                         for tie in dominated_students:
                             for st in tie:
                                 a_t = self.sp_no_tie_deletions[st]
-                                common_projects = p_k.intersection(a_t)
+                                common_projects = P_k.intersection(a_t)
                                 for pu in common_projects:
                                     self.delete(st, pu, lecturer)
 

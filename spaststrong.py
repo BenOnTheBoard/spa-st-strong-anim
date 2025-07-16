@@ -512,6 +512,7 @@ class SPAST_STRONG:
                     for tie_idx, tie in enumerate(self.og_lp[lk]["list"]):
                         if si in tie:
                             si_idx = self.og_lp[lk]["list_len"] - tie_idx
+                            break
                     edge_weight = self.num_students**2 + (
                         self.num_students - si_idx - 1
                     )
@@ -543,7 +544,15 @@ class SPAST_STRONG:
             self.repletion_deletions()  # lines 27 - 34
 
         self.delete_lesser_unbound_edges()
-        self.get_feasible_matching()
+        double_bound = False
+        for si in self.sp:
+            if len(self.G[si]["bound"]) > 1:
+                double_bound = True
+
+        if double_bound:
+            self.M = {si: "" for si in self.sp}
+        else:
+            self.get_feasible_matching()
 
         return self.M
 

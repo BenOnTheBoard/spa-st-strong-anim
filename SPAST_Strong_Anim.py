@@ -207,9 +207,17 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.figure.suptitle("Post-unbound deletions.")
         self.draw_SPA_graph()
 
-        self.update_bound_unbound()
-        self.get_feasible_matching()
-        self.figure.suptitle("End-state.")
+        double_bound = False
+        for si in self.sp:
+            if len(self.G[si]["bound"]) > 1:
+                double_bound = True
+
+        if double_bound:
+            self.M = {si: "" for si in self.sp}
+            self.figure.suptitle("End-state : No matching")
+        else:
+            self.get_feasible_matching()
+            self.figure.suptitle("End-state : Feasible")
         self.draw_matching_only()
         plt.pause(self.END_WAIT)
 

@@ -286,7 +286,7 @@ class SPAST_STRONG:
                         Gr.add_edge(pj, lk, capacity=self.G[pj]["revised_quota"])
                 Gr.add_edge(lk, "t", capacity=self.G[lk]["revised_quota"])
 
-        max_flow = nx.max_flow_min_cost(Gr, "s", "t")
+        _, max_flow = nx.maximum_flow(Gr, "s", "t")
         return max_flow
 
     def unhappy_students(self):

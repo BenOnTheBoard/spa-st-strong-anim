@@ -297,14 +297,17 @@ class SPAST_STRONG:
         return Us
 
     def criticalset_students(self, Us):
-        unexplored_students = set([s for s in Us])
-        explored_students, visited_projects, explored_lecturers = set(), set(), set()
+        unexplored_students = {s for s in Us}
+        explored_students = set()
+        visited_projects = set()
+        explored_lecturers = set()
+
         while unexplored_students:
             student = unexplored_students.pop()
             explored_students.add(student)
-            projects_to_explore = set(
-                [p for p in self.max_flow[student] if self.max_flow[student][p] == 0]
-            )
+            projects_to_explore = {
+                p for p in self.max_flow[student] if self.max_flow[student][p] == 0
+            }
             new_projects = set()
 
             for p in projects_to_explore:
@@ -317,14 +320,11 @@ class SPAST_STRONG:
                     PknPr = self.G[lecturer]["projects"].intersection(
                         set(self.max_flow.keys())
                     )
-                    saturated_projects = set(
-                        [
-                            pj
-                            for pj in PknPr
-                            if self.max_flow[pj][lecturer]
-                            == self.G[pj]["revised_quota"]
-                        ]
-                    )
+                    saturated_projects = {
+                        pj
+                        for pj in PknPr
+                        if self.max_flow[pj][lecturer] == self.G[pj]["revised_quota"]
+                    }
                     new_projects.update(saturated_projects)
 
             projects_to_explore.update(new_projects)

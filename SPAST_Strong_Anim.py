@@ -22,7 +22,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.column = {"s": 1, "p": 2, "l": 3}
 
         ### plot control panel ###
-        self.WAIT_PER_DRAW = 3
+        self.WAIT_PER_DRAW = 5
         self.END_WAIT = 400
         self.style_info = {
             "stable_edge_colour": "#2efd33",
@@ -224,7 +224,10 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "examples/small_breakers/no_del_2bii.txt"
+# filename = "examples/misc/Zs_deletes_ssp.txt"
+filename = "examples/misc/too_few_del.txt"
+# filename = "examples/small_breakers/no_del_2bii.txt"
+# filename = "alg_error.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

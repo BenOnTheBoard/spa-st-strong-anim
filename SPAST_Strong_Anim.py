@@ -144,10 +144,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             number = int(x[1:])
             pos[x] = (self.column[letter], number * self.spacing[letter])
 
-            if letter in ("p", "l"):
-                labels[x] = f"{x} : {self.G[x]['revised_quota']}"
-            else:
-                labels[x] = x
+            labels[x] = x
 
         self.axes[1].clear()
         self.draw_graph_plot(G_display, labels, pos, self.axes[1])
@@ -173,10 +170,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             number = int(x[1:])
             pos[x] = (self.column[letter], number * self.spacing[letter])
 
-            if letter in ("p", "l"):
-                labels[x] = f"{x} : {self.G[x]['revised_quota']}"
-            else:
-                labels[x] = x
+            labels[x] = x
 
         self.axes[2].clear()
         self.draw_graph_plot(G_matching, labels, pos, self.axes[2])
@@ -224,8 +218,8 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-# filename = "examples/misc/Zs_deletes_ssp.txt"
-filename = "examples/misc/too_few_del.txt"
+filename = "examples/misc/Zs_deletes_ssp.txt"
+# filename = "examples/misc/too_few_del.txt"
 # filename = "examples/small_breakers/no_del_2bii.txt"
 # filename = "alg_error.txt"
 instance = SPAST_STRONG_ANIM(filename)

@@ -561,7 +561,7 @@ class SPAST_STRONG:
 
     def repletion_deletions(self):
         for pj, pj_info in self.plc.items():
-            if self.G[pj]["replete"] and self.pquota(pj) < self.plc[pj]["cap"]:
+            if self.pquota(pj) < self.plc[pj]["cap"]:
                 lk = pj_info["lec"]
                 for sr in self.G[pj]["rejected"]:
                     nsr = self.G[sr]["projects"]

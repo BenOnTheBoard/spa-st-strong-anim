@@ -208,3 +208,8 @@ class STSMBruteForce:
 
     def get_ssm_list(self):
         return self.ssm_list
+
+if __name__ == "__main__":
+    bf = STSMBruteForce(filename="sizes_example.txt")
+    bf.choose()
+    print(bf.get_ssm_list())

@@ -152,6 +152,9 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
     def max_flow_as_graph(self):
         flow_G = nx.DiGraph()
 
+        if not self.max_flow:
+            return flow_G
+
         for student in self.max_flow["s"].keys():
             for project, flow_val in self.max_flow[student].items():
                 if flow_val == 1:

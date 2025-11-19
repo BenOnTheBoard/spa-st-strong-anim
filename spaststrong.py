@@ -300,86 +300,19 @@ class SPAST_STRONG:
         return p_boolean and l_boolean
 
     def buildGr(self):
-        G_copy = deepcopy(self.G)
-
-        made_deletion = True
-        while made_deletion:
-            made_deletion = False
-            for project in self.plc:
-                G_copy[project]["num_bound_edges"] = 0
-                G_copy[project]["revised_quota"] = 0
-            for lecturer in self.lp:
-                G_copy[lecturer]["num_bound_edges"] = 0
-                G_copy[lecturer]["revised_quota"] = 0
-
-            for s in self.sp:
-                Gs = G_copy[s]["projects"]
-                bound_projects = set()
-                for p in Gs:
-                    L = self.plc[p]["lec"]
-                    if self.is_bound_in_reduced(G_copy, s, p, L):
-                        bound_projects.add(p)
-                        G_copy[p]["num_bound_edges"] += 1
-                        G_copy[L]["num_bound_edges"] += 1
-                unbound_projects = Gs.difference(bound_projects)
-                G_copy[s]["bound"] = bound_projects
-                G_copy[s]["unbound"] = unbound_projects
-
-            for project in self.plc:
-                qpj = min(self.plc[project]["cap"], len(G_copy[project]["students"]))
-                pbound_edges = G_copy[project]["num_bound_edges"]
-                G_copy[project]["revised_quota"] = qpj - pbound_edges
-
-            for lecturer in self.lp:
-                alpha_k = sum(
-                    [
-                        min(self.plc[project]["cap"], len(G_copy[project]["students"]))
-                        for project in self.G[lecturer]["projects"]
-                    ]
-                )
-                qlk = min(self.lp[lecturer]["cap"], alpha_k)
-                lbound_edges = G_copy[lecturer]["num_bound_edges"]
-                G_copy[lecturer]["revised_quota"] = qlk - lbound_edges
-
-            # actual deletions
-            for si in self.sp:
-                if G_copy[si]["bound"] and G_copy[si]["unbound"]:
-                    for pj in G_copy[si]["unbound"]:
-                        lk = self.plc[pj]["lec"]
-                        if pj in self.G[si]["projects"]:
-                            G_copy[si]["projects"].remove(pj)
-                            G_copy[pj]["students"].remove(si)
-
-                            if len(G_copy[project]["students"]) == 0:
-                                G_copy[lk]["projects"].discard(project)
-
-                            if (
-                                len(
-                                    G_copy[si]["projects"].intersection(
-                                        G_copy[lk]["projects"]
-                                    )
-                                )
-                                == 0
-                            ):
-                                G_copy[lk]["students"].remove(si)
-                    made_deletion = True
-                    break
-
         Gr = nx.DiGraph()
-        Gr.add_node("s")
-        Gr.add_node("t")
         for si in self.sp:
-            if len(G_copy[si]["bound"]) == 0 and len(G_copy[si]["unbound"]) > 0:
+            if len(self.G[si]["bound"]) == 0 and len(self.G[si]["unbound"]) > 0:
                 Gr.add_edge("s", si, capacity=1)
                 for pj in self.G[si]["unbound"]:
                     Gr.add_edge(si, pj, capacity=1)
 
         for lk in self.lp:
-            if G_copy[lk]["revised_quota"] > 0:
-                for pj in G_copy[lk]["projects"]:
-                    if G_copy[pj]["revised_quota"] > 0:
-                        Gr.add_edge(pj, lk, capacity=G_copy[pj]["revised_quota"])
-                Gr.add_edge(lk, "t", capacity=G_copy[lk]["revised_quota"])
+            if self.G[lk]["revised_quota"] > 0:
+                for pj in self.G[lk]["projects"]:
+                    if self.G[pj]["revised_quota"] > 0:
+                        Gr.add_edge(pj, lk, capacity=self.G[pj]["revised_quota"])
+                Gr.add_edge(lk, "t", capacity=self.G[lk]["revised_quota"])
 
         _, max_flow = nx.maximum_flow(Gr, "s", "t")
         return max_flow

@@ -301,11 +301,28 @@ class SPAST_STRONG:
 
     def buildGr(self):
         Gr = nx.DiGraph()
+        Gr_weights = {p:None for p in self.plc.keys()}
+        Gr.add_node('s')
+        Gr.add_node('t')
         for si in self.sp:
             if len(self.G[si]["bound"]) == 0 and len(self.G[si]["unbound"]) > 0:
                 Gr.add_edge("s", si, capacity=1)
                 for pj in self.G[si]["unbound"]:
-                    Gr.add_edge(si, pj, capacity=1)
+                    lk = self.plc[pj]["lec"]
+                    for tie_idx, tie in enumerate(self.og_lp[lk]["list"]):
+                        if si in tie:
+                            si_idx = tie_idx
+                            break
+                    Gr.add_edge(
+                        si,
+                        pj,
+                        weight=si_idx,
+                        capacity=1,
+                    )
+                    if Gr_weights[pj] is None:
+                        Gr_weights[pj] = si_idx
+                    elif Gr_weights[pj] != si_idx:
+                        return ValueError("quack")
 
         for lk in self.lp:
             if self.G[lk]["revised_quota"] > 0:
@@ -314,8 +331,8 @@ class SPAST_STRONG:
                         Gr.add_edge(pj, lk, capacity=self.G[pj]["revised_quota"])
                 Gr.add_edge(lk, "t", capacity=self.G[lk]["revised_quota"])
 
-        _, max_flow = nx.maximum_flow(Gr, "s", "t")
-        return max_flow
+        max_flow = nx.max_flow_min_cost(Gr, "s", "t")
+        return max_flow, Gr_weights
 
     def unhappy_students(self):
         Gr_students = set(self.max_flow["s"].keys())
@@ -324,7 +341,7 @@ class SPAST_STRONG:
         )
         return Us
 
-    def criticalset_students(self, Us):
+    def criticalset_students(self, Us, Gr_weights):
         unexplored_students = {s for s in Us}
         explored_students = set()
         visited_projects = set()
@@ -348,12 +365,13 @@ class SPAST_STRONG:
                     PknPr = self.G[lecturer]["projects"].intersection(
                         set(self.max_flow.keys())
                     )
-                    saturated_projects = {
+                    saturated_projects_no_better = {
                         pj
                         for pj in PknPr
                         if self.max_flow[pj][lecturer] == self.G[pj]["revised_quota"]
+                        and Gr_weights[pj] == Gr_weights[p]
                     }
-                    new_projects.update(saturated_projects)
+                    new_projects.update(saturated_projects_no_better)
 
             projects_to_explore.update(new_projects)
 
@@ -398,11 +416,11 @@ class SPAST_STRONG:
 
             if self.build_Gr:
                 self.update_revised_quota()
-                self.max_flow = self.buildGr()
+                self.max_flow, Gr_weights = self.buildGr()
 
                 ### student ###
                 Us = self.unhappy_students()
-                self.Zs = self.criticalset_students(Us)
+                self.Zs = self.criticalset_students(Us, Gr_weights)
                 self.Zs_deletions()
 
     def most_preferred_reject(self, project):
@@ -586,7 +604,8 @@ class SPAST_STRONG:
 
 
 if __name__ == "__main__":
-    filename = "examples/misc/Zs_deletes_ssp.txt"
+    #filename = "examples/misc/Zs_deletes_ssp.txt"
+    filename = "alg_error.txt"
     instance = SPAST_STRONG(filename)
     print(instance.run())
     print("Finished")

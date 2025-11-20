@@ -22,7 +22,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         self.column = {"s": 1, "p": 2, "l": 3}
 
         ### plot control panel ###
-        self.WAIT_PER_DRAW = 5
+        self.WAIT_PER_DRAW = 6
         self.END_WAIT = 400
         self.style_info = {
             "stable_edge_colour": "#2efd33",
@@ -31,7 +31,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
             "node_color": "none",
             "node_size": 600,
             "bbox": {
-                "facecolor": "#c2b0e0",
+                "facecolor": "#a187cc",
                 "edgecolor": "black",
                 "boxstyle": "round,pad=0.1",
             },
@@ -49,12 +49,12 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
 
             if self.build_Gr:
                 self.update_revised_quota()
-                self.max_flow = self.buildGr()
+                self.max_flow, Gr_weights = self.buildGr()
                 self.draw_matching_only()
 
                 ### student ###
                 Us = self.unhappy_students()
-                self.Zs = self.criticalset_students(Us)
+                self.Zs = self.criticalset_students(Us, Gr_weights)
                 self.figure.suptitle(f"Critical Students Stage, Z_s = {self.Zs}.")
                 self.draw_SPA_reduced()
                 self.Zs_deletions()
@@ -221,10 +221,10 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
         return self.M
 
 
-filename = "examples/misc/Zs_deletes_ssp.txt"
+# filename = "examples/misc/Zs_deletes_ssp.txt"
 # filename = "examples/misc/too_few_del.txt"
 # filename = "examples/small_breakers/no_del_2bii.txt"
-# filename = "alg_error.txt"
+filename = "alg_error.txt"
 instance = SPAST_STRONG_ANIM(filename)
 instance.run()
 print("Finished")

@@ -271,39 +271,11 @@ class SPAST_STRONG:
         for lecturer in self.lp:
             self.G[lecturer]["revised_quota"] = self.revised_lquota(lecturer)
 
-    def is_bound_in_reduced(self, reduced, student, project, lecturer):
-        p_tail_idx = self.plc[project]["tail_idx"]
-        l_tail_idx = self.lp[lecturer]["tail_idx"]
-
-        qpj = min(self.plc[project]["cap"], len(reduced[project]["students"]))
-        alpha_k = sum(
-            [
-                min(self.plc[project]["cap"], len(reduced[project]["students"]))
-                for project in reduced[lecturer]["projects"]
-            ]
-        )
-        qlk = min(self.lp[lecturer]["cap"], alpha_k)
-
-        p_boolean = (len(reduced[project]["students"]) == qpj) or (
-            student not in self.plc[project]["list"][p_tail_idx]
-        )
-        l_boolean = (
-            sum(
-                [
-                    min(self.plc[project]["cap"], len(reduced[project]["students"]))
-                    for project in reduced[lecturer]["projects"]
-                ]
-            )
-            == qlk
-        ) or student not in self.lp[lecturer]["list"][l_tail_idx]
-
-        return p_boolean and l_boolean
-
     def buildGr(self):
         Gr = nx.DiGraph()
-        Gr_weights = {p:None for p in self.plc.keys()}
-        Gr.add_node('s')
-        Gr.add_node('t')
+        Gr_weights = {p: None for p in self.plc.keys()}
+        Gr.add_node("s")
+        Gr.add_node("t")
         for si in self.sp:
             if len(self.G[si]["bound"]) == 0 and len(self.G[si]["unbound"]) > 0:
                 Gr.add_edge("s", si, capacity=1)
@@ -322,7 +294,7 @@ class SPAST_STRONG:
                     if Gr_weights[pj] is None:
                         Gr_weights[pj] = si_idx
                     elif Gr_weights[pj] != si_idx:
-                        return ValueError("quack")
+                        raise ValueError("quack")
 
         for lk in self.lp:
             if self.G[lk]["revised_quota"] > 0:
@@ -604,7 +576,7 @@ class SPAST_STRONG:
 
 
 if __name__ == "__main__":
-    #filename = "examples/misc/Zs_deletes_ssp.txt"
+    # filename = "examples/misc/Zs_deletes_ssp.txt"
     filename = "alg_error.txt"
     instance = SPAST_STRONG(filename)
     print(instance.run())

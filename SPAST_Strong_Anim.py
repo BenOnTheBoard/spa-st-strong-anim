@@ -193,7 +193,7 @@ class SPAST_STRONG_ANIM(SPAST_STRONG):
     def run(self):
         self.find_ss_edges_dict()
 
-        while self.unassigned_and_non_empty_list:
+        while not self.can_exit_outermost_loop():
             self.inner_repeat()  # lines 2 - 26
             self.repletion_deletions()  # lines 27 - 34
 

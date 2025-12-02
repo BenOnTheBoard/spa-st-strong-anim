@@ -556,8 +556,32 @@ class SPAST_STRONG:
                 if flow == 1:
                     self.M[s] = p
 
+    def has_empty_list(self, student):
+        for tie in self.sp[student]["list"]:
+            for project in tie:
+                if project != "dp":
+                    return False
+        return True
+
+    def is_assigned_in_max_flow(self, student):
+        if student not in self.max_flow.keys():
+            return False
+
+        for _, indicator in self.max_flow[student].items():
+            if indicator == 1:
+                return True
+        return False
+
+    def can_exit_outermost_loop(self):
+        self.update_bound_unbound()
+        for s in self.sp.keys():
+            if not self.G[s]["bound"] and not self.is_assigned_in_max_flow(s):
+                if not self.has_empty_list(s):
+                    return False
+        return True
+
     def run(self):
-        while self.unassigned_and_non_empty_list:
+        while not self.can_exit_outermost_loop():
             self.inner_repeat()  # lines 2 - 26
             self.repletion_deletions()  # lines 27 - 34
 

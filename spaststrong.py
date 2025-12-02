@@ -285,7 +285,12 @@ class SPAST_STRONG:
                         if si in tie:
                             si_idx = tie_idx
                             break
-                    Gr.add_edge(si, pj, weight=si_idx, capacity=1)
+                    Gr.add_edge(
+                        si,
+                        pj,
+                        weight=si_idx,
+                        capacity=1,
+                    )
                     if Gr_weights[pj] is None:
                         Gr_weights[pj] = si_idx
                     elif Gr_weights[pj] != si_idx:
@@ -296,14 +301,7 @@ class SPAST_STRONG:
                 for pj in self.G[lk]["projects"]:
                     if self.G[pj]["revised_quota"] > 0:
                         Gr.add_edge(pj, lk, capacity=self.G[pj]["revised_quota"])
-
-                quota_decrease = sum(
-                    self.G[pj]["revised_quota"] - len(Gr.in_edges(pj))
-                    for pj in self.G[lk]["projects"]
-                )
-                Gr.add_edge(
-                    lk, "t", capacity=self.G[lk]["revised_quota"] - quota_decrease
-                )
+                Gr.add_edge(lk, "t", capacity=self.G[lk]["revised_quota"])
 
         max_flow = nx.max_flow_min_cost(Gr, "s", "t")
         return max_flow, Gr_weights

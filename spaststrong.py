@@ -237,6 +237,33 @@ class SPAST_STRONG:
                 0,
             )
 
+    def new_update_bound_unbound(self):
+        Gr = nx.DiGraph()
+        Gr.add_node("s")
+        Gr.add_node("t")
+        for si in self.sp:
+            Gr.add_edge("s", si, capacity=1)
+            for pj in self.G[si]["projects"]:
+                lk = self.plc[pj]["lec"]
+                for tie_idx, tie in enumerate(self.og_lp[lk]["list"]):
+                    if si in tie:
+                        si_idx = tie_idx
+                        break
+                Gr.add_edge(si, pj, weight=si_idx, capacity=1)
+
+        for pj in self.plc:
+            lk = self.plc[pj]["lec"]
+            Gr.add_edge(pj, lk, capacity=self.plc[pj]["cap"])
+
+        for lk in self.lp:
+            Gr.add_edge(lk, "t", capacity=self.lp[lk]["cap"])
+            max_flow = nx.max_flow_min_cost(Gr, "s", "t")
+            print(lk, [s for s, v in max_flow["s"].items() if v == 1])
+            print()
+            Gr.remove_edge(lk, "t")
+        quit()
+        return max_flow
+
     def update_bound_unbound(self):
         self.build_Gr = False
         self.reset_bound()
@@ -384,6 +411,7 @@ class SPAST_STRONG:
         while self.Zs:
             self.Zs = set()
             self.while_loop()
+            self.new_update_bound_unbound()
             self.update_bound_unbound()
 
             if self.build_Gr:
